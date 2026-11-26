@@ -1,7 +1,18 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { Suspense } from 'react';
+import { ExploreScreen } from '@/components/explore/ExploreScreen';
 
-export const metadata = { title: 'Explore' };
+export const metadata = {
+  title: 'Explore',
+  description: 'Every country on one map of flags. Tap a country for sourced facts, or colour the world by population, density and area.',
+};
 
 export default function Page() {
-  return <ComingSoon icon="explore" milestone="Milestone 2" title="Explore" body="The map of flags, data layers with a year slider, rankings, compare and the sourced country panel are being built next." />;
+  return (
+    <>
+      <h1 className="sr-only">Explore the world map</h1>
+      <Suspense>
+        <ExploreScreen />
+      </Suspense>
+    </>
+  );
 }

@@ -17,6 +17,11 @@ export interface CountryIndexItem {
   languages: string[];
   currency: { code: string; name: string; symbol: string } | null;
   landlocked: boolean;
+  /** land neighbours, ISO alpha-2 */
+  borders: string[];
+  links: { wikipedia: string; worldbank: string | null };
+  latlng: [number, number];
+  hasShape: boolean;
   /** 4:3 flag, for map fills and uniform boxes */
   flag: string;
   /** square flag (redrawn for circles and avatars) */

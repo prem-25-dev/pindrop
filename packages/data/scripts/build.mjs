@@ -66,6 +66,14 @@ const isUN195 = (c) => c.unMember || c.cca2 === 'VA' || c.cca2 === 'PS';
 
 // ---------- shapes: ids -> ISO alpha-2, drop Antarctica ----------
 const byNumeric = new Map(facts.map((c) => [c.ccn3, c]));
+const byCca3 = new Map(facts.map((c) => [c.cca3, c]));
+// English Wikipedia titles where the plain country name lands on another article or a disambiguation page
+const WIKI_TITLE = {
+  GE: 'Georgia_(country)', IE: 'Republic_of_Ireland', FM: 'Federated_States_of_Micronesia', PS: 'State_of_Palestine',
+  CG: 'Republic_of_the_Congo', CD: 'Democratic_Republic_of_the_Congo', VA: 'Vatican_City', TL: 'East_Timor',
+  MK: 'North_Macedonia', CI: 'Ivory_Coast', MF: 'Collectivity_of_Saint_Martin', SX: 'Sint_Maarten', GM: 'The_Gambia', BS: 'The_Bahamas',
+};
+const wikiUrl = (c) => `https://en.wikipedia.org/wiki/${WIKI_TITLE[c.cca2] ?? encodeURIComponent(c.name.common.replace(/ /g, '_'))}`;
 const NAME_FALLBACK = { Kosovo: 'XK', 'Indian Ocean Ter.': 'AU' };
 const DISPUTED = new Set(['Somaliland', 'N. Cyprus', 'Siachen Glacier']);
 const shapeCodes = new Set();
@@ -113,6 +121,11 @@ const countries = facts
       area: c.area > 0 ? { v: c.area, year: null, src: 'mledoze' } : null,
       population: pop ? { v: pop.v, year: pop.year, src: 'worldbank', url: wbLink('SP.POP.TOTL', c.cca3) } : null,
       landlocked: !!c.landlocked,
+      borders: (c.borders || []).map((b) => byCca3.get(b)?.cca2).filter(Boolean),
+      links: {
+        wikipedia: wikiUrl(c),
+        worldbank: popByIso3.has(c.cca3) ? `https://data.worldbank.org/country/${c.cca2.toLowerCase()}` : null,
+      },
       languages: Object.values(c.languages || {}).slice(0, 3),
       currency: Object.entries(c.currencies || {}).map(([code, v]) => ({ code, name: v.name, symbol: v.symbol || '' }))[0] ?? null,
       hasShape: shapeCodes.has(c.cca2),

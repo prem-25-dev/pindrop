@@ -49,7 +49,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="clay-wallpaper" aria-hidden />
-      <WorldBackdrop />
+      {!path.startsWith('/explore') && <WorldBackdrop />}
       <a href="#main" className="clay sr-only z-50 px-4 py-2 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>
