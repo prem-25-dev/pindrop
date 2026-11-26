@@ -58,7 +58,7 @@ function FlagObject({ c, className }: { c: CountryIndexItem | null; className: s
       {c && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.flag} alt="Today's mystery flag" className="block h-full w-full" />
+          <img src={c.flag} alt="Mystery flag of the day" className="block h-full w-full" />
           <span
             aria-hidden
             className="pointer-events-none absolute inset-0 rounded-[inherit]"
@@ -75,7 +75,8 @@ function FlagObject({ c, className }: { c: CountryIndexItem | null; className: s
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="clay min-w-0 rounded-2xl px-3 py-2.5" data-elev="1">
+    // plain: no surface, just a hairline above each fact
+    <div className="min-w-0 border-t border-[var(--line)] pt-2.5">
       <dt className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--ink-3)]">{label}</dt>
       <dd className="mt-0.5 truncate text-sm font-extrabold leading-snug">{children}</dd>
     </div>
@@ -205,22 +206,35 @@ export function FlagOfTheDay() {
       {header}
 
       <div className="mt-4 flex items-center gap-3.5">
-        <FlagObject c={a} className="w-16 shrink-0 !rounded-xl" />
+        {/* round flag: the square set is redrawn for circles, so nothing important is cut off */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={a.flagSquare}
+          alt=""
+          width={52}
+          height={52}
+          className="h-[52px] w-[52px] shrink-0 rounded-full object-cover"
+          style={{ boxShadow: '0 0 0 2px var(--surface), 0 6px 14px -4px var(--clay-drop)' }}
+        />
         <div className="min-w-0">
           <h3 className="truncate text-2xl font-black leading-tight tracking-tight">{a.name}</h3>
           <p className="truncate text-xs font-bold text-[var(--ink-3)]">{a.official}</p>
         </div>
       </div>
 
+      {/* plain badge: flat tint, no clay */}
       <p
-        className={`mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-extrabold ${right ? 'clay-tint tint-c4' : 'clay-tint'}`}
-        style={right ? undefined : ({ '--tint': 'var(--bad)', '--tint-deep': 'color-mix(in oklab, var(--bad) 75%, black)' } as CSSProperties)}
+        className="mt-3 inline-flex w-fit items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-extrabold"
+        style={{
+          background: `color-mix(in oklab, ${right ? 'var(--c4)' : 'var(--bad)'} 16%, transparent)`,
+          color: right ? 'var(--c4)' : 'var(--bad)',
+        }}
         aria-live="polite"
       >
         {right ? '✓ You got it' : `✗ You picked ${pickedName ?? 'another flag'}`}
       </p>
 
-      <dl className="mt-4 grid grid-cols-2 gap-2">
+      <dl className="mt-4 grid grid-cols-2 gap-x-5 gap-y-3">
         <Fact label="Capital">{a.capital?.name ?? '—'}</Fact>
         <Fact label="Population">
           {a.population ? (

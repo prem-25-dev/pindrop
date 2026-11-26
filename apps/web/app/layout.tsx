@@ -7,7 +7,7 @@ import './globals.css';
 const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito', display: 'swap', weight: ['400', '600', '700', '800', '900'] });
 
 export const metadata: Metadata = {
-  title: { default: 'Pinpoint — the world, one flag at a time', template: '%s · Pinpoint' },
+  title: { default: 'Pinpoint — the world map, made playable', template: '%s · Pinpoint' },
   description: 'Explore every country on a map of flags with sourced facts, and play geography games solo or with friends.',
 };
 

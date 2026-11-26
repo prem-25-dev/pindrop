@@ -26,12 +26,12 @@ export default function Home() {
             <span className="h-6 w-6 [&>svg]:h-full [&>svg]:w-full">
               <ClayIcon name="explore" size={24} />
             </span>
-            The world&rsquo;s flags, made playable
+            195 countries, every flag, one map
           </p>
           <h1 className="mt-5 text-balance text-[2.6rem] font-black leading-[0.98] tracking-tight sm:text-7xl">
-            The whole world,
+            The world map,
             <br />
-            <span className="text-[var(--accent)]">one flag</span> at a time.
+            <span className="text-[var(--accent)]">made playable.</span>
           </h1>
           <p className="mt-5 max-w-xl text-balance text-lg font-semibold leading-relaxed text-[var(--ink-2)]">
             Explore every country with sourced facts, then put your geography to the test, alone or with a room full of friends.

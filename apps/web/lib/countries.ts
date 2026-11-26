@@ -19,6 +19,8 @@ export interface CountryIndexItem {
   landlocked: boolean;
   /** 4:3 flag, for map fills and uniform boxes */
   flag: string;
+  /** square flag (redrawn for circles and avatars) */
+  flagSquare: string;
   /** flag in its real proportions, for showing a flag on its own */
   flagTrue: string;
   /** width / height of the real flag */

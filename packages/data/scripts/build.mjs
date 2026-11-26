@@ -15,6 +15,9 @@ const VERSION = 'v2026.11';
 const OUT = path.join(repo, 'apps/web/public/data', VERSION);
 const FLAGS_OUT = path.join(repo, 'apps/web/public/flags');
 const FLAGS_SRC = path.join(path.dirname(require.resolve('flag-icons/package.json')), 'flags/4x3');
+// square versions, redrawn by flag-icons for circles and avatars
+const SQUARE_FLAGS_SRC = path.join(path.dirname(require.resolve('flag-icons/package.json')), 'flags/1x1');
+const SQUARE_FLAGS_OUT = path.join(repo, 'apps/web/public/flags/1x1');
 // True-proportion flags (Wikipedia-derived, public domain) for showing a flag on its own.
 // The 4:3 set above stays for map fills, where every flag needs the same box.
 const TRUE_FLAGS_SRC = path.join(path.dirname(require.resolve('svg-country-flags/package.json')), 'svg');
@@ -115,6 +118,7 @@ const countries = facts
       hasShape: shapeCodes.has(c.cca2),
       aliases: aliasesOf(c),
       flag: `/flags/${flagFile}`,
+      flagSquare: `/flags/1x1/${flagFile}`,
       ...(() => {
         const src = path.join(TRUE_FLAGS_SRC, flagFile);
         if (!fs.existsSync(src)) {
@@ -215,6 +219,11 @@ for (const c of countries) {
   const f = `${c.code.toLowerCase()}.svg`;
   const src = path.join(FLAGS_SRC, f);
   if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(FLAGS_OUT, f)); copied++; }
+  const sq = path.join(SQUARE_FLAGS_SRC, f);
+  if (fs.existsSync(sq)) {
+    fs.mkdirSync(SQUARE_FLAGS_OUT, { recursive: true });
+    fs.copyFileSync(sq, path.join(SQUARE_FLAGS_OUT, f));
+  } else problems.push(`no square flag: ${c.code}`);
   const trueSrc = path.join(TRUE_FLAGS_SRC, f);
   if (fs.existsSync(trueSrc)) {
     fs.mkdirSync(TRUE_FLAGS_OUT, { recursive: true });
