@@ -1,0 +1,19 @@
+{
+  "name": "pinpoint",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinpoint — explore the world's flags and play geography games",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @pinpoint/web",
+    "build": "npm run build -w @pinpoint/web",
+    "data": "npm run build -w @pinpoint/data",
+    "typecheck": "npm run typecheck --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

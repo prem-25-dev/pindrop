@@ -1,0 +1,14 @@
+{
+  "name": "@pinpoint/ui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinpoint clay design system",
+  "exports": {
+    ".": "./src/index.ts",
+    "./clay.css": "./src/clay.css"
+  },
+  "peerDependencies": {
+    "motion": "*",
+    "react": "*"
+  }
+}

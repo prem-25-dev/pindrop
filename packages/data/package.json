@@ -1,0 +1,13 @@
+{
+  "name": "@pinpoint/data",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinpoint data pipeline: raw sources -> versioned JSON with a source for every value",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "devDependencies": {
+    "flag-icons": "7.6.0"
+  }
+}
