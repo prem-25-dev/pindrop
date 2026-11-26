@@ -86,8 +86,8 @@ export default function StyleGuide() {
             <p className="text-sm font-semibold text-[var(--ink-2)]">Hover to lift, press to sink. The light follows your pointer.</p>
           </ClaySurface>
           <div className="clay-well flex items-center gap-3 rounded-3xl p-6">
-            <span className="font-black">Sunken well</span>
-            <span className="text-sm font-semibold text-[var(--ink-2)]">Used for inputs, tracks and selected states.</span>
+            <span className="font-black">Soft field</span>
+            <span className="text-sm font-semibold text-[var(--ink-2)]">Flat, gently tinted: text inputs and control tracks. Chips and tiles are always raised.</span>
           </div>
         </div>
       </Section>

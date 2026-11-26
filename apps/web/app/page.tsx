@@ -66,7 +66,7 @@ export default function Home() {
 
           <dl className="mt-10 flex flex-wrap gap-2.5">
             {STATS.map(([n, label]) => (
-              <div key={label} className="clay-well flex items-baseline gap-1.5 rounded-2xl px-4 py-2.5">
+              <div key={label} className="clay flex items-baseline gap-1.5 rounded-2xl px-4 py-2.5" data-elev="1">
                 <dt className="sr-only">{label}</dt>
                 <dd className="text-xl font-black tabular-nums">{n}</dd>
                 <span className="text-sm font-bold text-[var(--ink-3)]">{label}</span>

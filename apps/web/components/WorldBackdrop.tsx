@@ -107,10 +107,10 @@ export function WorldBackdrop() {
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] flex items-center justify-center overflow-hidden">
-      {/* 86% of the viewport width on tablet/desktop; zoomed in on phones so the land stays readable */}
+      {/* 90% of the viewport width on tablet/desktop; zoomed in on phones so the land stays readable */}
       <div
         ref={box}
-        className="relative w-[240vw] max-w-none shrink-0 translate-x-[6%] -translate-y-[22vh] sm:w-[86vw] sm:translate-x-0 sm:translate-y-[2vh]"
+        className="relative w-[240vw] max-w-none shrink-0 translate-x-[6%] -translate-y-[22vh] sm:w-[90vw] sm:translate-x-0 sm:translate-y-[2vh]"
         style={{ aspectRatio: `${w} / ${h}` }}
       >
         {continents.map((c, i) => {

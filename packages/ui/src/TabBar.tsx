@@ -15,7 +15,7 @@ export function TabBar({ items, activeId, Link }: { items: DockItem[]; activeId?
           return (
             <Link key={it.id} href={it.href} aria-label={it.label} aria-current={active ? 'page' : undefined} className="clay-focus relative flex min-w-14 flex-col items-center gap-0.5 rounded-2xl px-1.5 py-1">
               {active && (
-                <motion.span layoutId="tab-active" className="clay-well absolute inset-0 rounded-2xl" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
+                <motion.span layoutId="tab-active" className="clay absolute inset-0 rounded-2xl" data-elev="1" transition={{ type: 'spring', stiffness: 500, damping: 34 }} />
               )}
               <motion.span whileTap={{ scale: 0.85 }} className="relative h-9 w-9 [&>svg]:h-full [&>svg]:w-full">
                 {it.icon}

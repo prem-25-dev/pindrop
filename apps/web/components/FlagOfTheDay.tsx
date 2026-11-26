@@ -47,22 +47,21 @@ function untilMidnight() {
 const compact = new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 });
 const CONFETTI = ['#FFC93C', '#FF5A5F', '#3CCB7F', '#4AA8FF', '#B07BFF', '#FF8A3D'];
 
-/** The flag on its own: no frame, its own rounded corners, a clay sheen and a soft shadow. */
-function FlagObject({ c, maxW, maxH }: { c: CountryIndexItem | null; maxW: number; maxH: number }) {
-  const ratio = c?.flagRatio ?? 1.5;
-  const width = Math.min(maxW, Math.round(maxH * ratio));
+/** The flag on its own: no frame, its own rounded corners, a clay sheen and a soft shadow.
+ *  Every flag uses the same 4:3 box (the 4:3 set is redrawn to fit, never squashed or chopped). */
+function FlagObject({ c, className }: { c: CountryIndexItem | null; className: string }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl ${c ? '' : 'clay-well'}`}
-      style={{ width, aspectRatio: String(ratio), boxShadow: '0 16px 28px -14px var(--clay-drop), 0 3px 8px var(--clay-drop-2)' }}
+      className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${className} ${c ? '' : 'clay-well'}`}
+      style={{ boxShadow: '0 16px 28px -14px var(--clay-drop), 0 3px 8px var(--clay-drop-2)' }}
     >
       {c && (
         <>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.flagTrue} alt="Today's mystery flag" className="block h-full w-full" />
+          <img src={c.flag} alt="Today's mystery flag" className="block h-full w-full" />
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-2xl"
+            className="pointer-events-none absolute inset-0 rounded-[inherit]"
             style={{
               background: 'linear-gradient(145deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%, rgba(0,0,0,0) 62%, rgba(0,0,0,.16) 100%)',
               boxShadow: 'inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 6px rgba(0,0,0,.12)',
@@ -76,7 +75,7 @@ function FlagObject({ c, maxW, maxH }: { c: CountryIndexItem | null; maxW: numbe
 
 function Fact({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="clay-well min-w-0 rounded-2xl px-3 py-2.5">
+    <div className="clay min-w-0 rounded-2xl px-3 py-2.5" data-elev="1">
       <dt className="text-[10px] font-extrabold uppercase tracking-wider text-[var(--ink-3)]">{label}</dt>
       <dd className="mt-0.5 truncate text-sm font-extrabold leading-snug">{children}</dd>
     </div>
@@ -147,7 +146,7 @@ export function FlagOfTheDay() {
           animate={done && !reduce ? (right ? { rotate: [0, 3, -2, 0], scale: [1, 1.06, 1] } : { x: [0, -8, 8, -5, 5, 0] }) : {}}
           transition={{ duration: 0.6 }}
         >
-          <FlagObject c={a ?? null} maxW={224} maxH={140} />
+          <FlagObject c={a ?? null} className="w-[176px] sm:w-[200px]" />
         </motion.div>
         <AnimatePresence>
           {right &&
@@ -206,7 +205,7 @@ export function FlagOfTheDay() {
       {header}
 
       <div className="mt-4 flex items-center gap-3.5">
-        <FlagObject c={a} maxW={84} maxH={52} />
+        <FlagObject c={a} className="w-16 shrink-0 !rounded-xl" />
         <div className="min-w-0">
           <h3 className="truncate text-2xl font-black leading-tight tracking-tight">{a.name}</h3>
           <p className="truncate text-xs font-bold text-[var(--ink-3)]">{a.official}</p>

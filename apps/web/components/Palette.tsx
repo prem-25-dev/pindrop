@@ -131,7 +131,7 @@ export function Palette() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <span className="flex h-[27px] w-10 shrink-0 items-center justify-center">
-                        <img src={c.flagTrue} alt="" loading="lazy" className="max-h-[27px] max-w-10 rounded-[5px] shadow-[0_2px_6px_var(--clay-drop-2)]" />
+                        <img src={c.flag} alt="" loading="lazy" width={36} height={27} className="h-[27px] w-9 rounded-[5px] shadow-[0_2px_6px_var(--clay-drop-2)]" />
                       </span>
                       <span className="font-extrabold">{c.name}</span>
                       {c.capital && <span className="truncate text-sm font-semibold text-[var(--ink-3)]">{c.capital.name}</span>}

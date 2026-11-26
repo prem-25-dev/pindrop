@@ -2,9 +2,11 @@
 import { useMemo } from 'react';
 import { useCountries } from '@/lib/countries';
 
-const H = 58; // flag height in px; width follows each flag's real proportions
+// every flag in the same 4:3 box (the 4:3 set is redrawn to fit, never squashed or chopped)
+const W = 76;
+const H = 57;
 
-/** Two rows of real flags (true proportions) in clay frames, drifting in opposite directions. Decorative. */
+/** Two rows of flags in thin clay frames, drifting in opposite directions. Decorative. */
 export function FlagRibbon() {
   const list = useCountries();
   const rows = useMemo(() => {
@@ -24,17 +26,9 @@ export function FlagRibbon() {
             <div key={i} className="clay shrink-0 p-[3px]" data-elev="1" style={{ borderRadius: 11 }}>
               {c ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={c.flagTrue}
-                  alt=""
-                  loading="lazy"
-                  height={H}
-                  width={Math.round(H * Math.min(c.flagRatio, 2.6))}
-                  className="block rounded-[8px] object-contain"
-                  style={{ height: H, width: Math.round(H * Math.min(c.flagRatio, 2.6)) }}
-                />
+                <img src={c.flag} alt="" loading="lazy" width={W} height={H} className="block rounded-[8px]" style={{ width: W, height: H }} />
               ) : (
-                <div className="clay-well rounded-[8px]" style={{ height: H, width: H * 1.5 }} />
+                <div className="clay-well rounded-[8px]" style={{ width: W, height: H }} />
               )}
             </div>
           ))}

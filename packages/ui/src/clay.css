@@ -277,13 +277,12 @@
     0 2px 4px var(--clay-drop-2);
 }
 
-/* sunken well (inputs, tracks) */
+/* soft field (text inputs, control tracks, placeholders): flat and gently tinted.
+   Nothing in Pinpoint is pressed into the surface; chips and tiles use raised .clay instead. */
 .clay-well {
-  background: var(--surface-2);
+  background: color-mix(in oklab, var(--ink) 6%, var(--surface-2));
   border-radius: var(--radius-sm);
-  box-shadow:
-    inset 4px 4px 10px var(--clay-lo),
-    inset -4px -4px 10px var(--clay-hi);
+  box-shadow: inset 0 0 0 1px var(--line);
 }
 
 /* tinted clay (coloured surfaces) */
