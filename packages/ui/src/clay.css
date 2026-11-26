@@ -3,8 +3,8 @@
    macOS layout + claymorphism surfaces.
 
    Three palettes (data-palette on <html>), each with light + dark (.dark on <html>):
-     mono  — cool grey clay, cobalt accent          (default)
-     atlas — warm paper clay, vermilion + teal      (old-map feel)
+     atlas — warm paper clay, vermilion + teal      (default, old-map feel)
+     mono  — cool grey clay, cobalt accent
      terra — sand & terracotta clay, sage + ochre   (earthy)
 
    Components only use the semantic roles below, never raw colours:
@@ -25,8 +25,7 @@
   --on-accent: #ffffff;
 }
 
-/* ---------- MONO (default) ---------- */
-:root,
+/* ---------- MONO ---------- */
 [data-palette="mono"] {
   --bg: #e3e5e9;
   --bg-2: #dcdfe4;
@@ -51,7 +50,6 @@
   --neutral: #8f95a3; --neutral-deep: #5f6573;
   color-scheme: light;
 }
-:root.dark,
 .dark[data-palette="mono"],
 .dark [data-palette="mono"] {
   --bg: #111214;
@@ -78,7 +76,8 @@
   color-scheme: dark;
 }
 
-/* ---------- ATLAS ---------- */
+/* ---------- ATLAS (default) ---------- */
+:root:not([data-palette]),
 [data-palette="atlas"] {
   --bg: #ece7df;
   --bg-2: #e5dfd5;
@@ -103,6 +102,7 @@
   --neutral: #9a9286; --neutral-deep: #6b6459;
   color-scheme: light;
 }
+:root.dark:not([data-palette]),
 .dark[data-palette="atlas"],
 .dark [data-palette="atlas"] {
   --bg: #151413;

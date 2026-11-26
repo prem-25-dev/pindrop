@@ -5,14 +5,14 @@ export type ThemePref = 'system' | 'light' | 'dark';
 export type PaletteId = 'mono' | 'atlas' | 'terra';
 
 export const PALETTES: { id: PaletteId; label: string; note: string }[] = [
-  { id: 'mono', label: 'Mono', note: 'Cool grey clay, cobalt accent' },
   { id: 'atlas', label: 'Atlas', note: 'Warm paper clay, vermilion and teal' },
+  { id: 'mono', label: 'Mono', note: 'Cool grey clay, cobalt accent' },
   { id: 'terra', label: 'Terra', note: 'Sand and terracotta clay, sage and ochre' },
 ];
 
 const THEME_KEY = 'pinpoint-theme';
 const PALETTE_KEY = 'pinpoint-palette';
-const DEFAULT_PALETTE: PaletteId = 'mono';
+const DEFAULT_PALETTE: PaletteId = 'atlas';
 
 /** Runs in <head> before paint so there is no flash of the wrong theme or palette. */
 export const THEME_INIT_SCRIPT = `(function(){var d=document.documentElement;var p='system',c='${DEFAULT_PALETTE}';try{p=localStorage.getItem('${THEME_KEY}')||'system';c=localStorage.getItem('${PALETTE_KEY}')||'${DEFAULT_PALETTE}';}catch(e){}var dark=p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);d.classList.toggle('dark',dark);d.setAttribute('data-palette',c);})();`;
