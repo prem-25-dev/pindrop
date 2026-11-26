@@ -42,7 +42,7 @@ export function WorldBackdrop() {
         initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 1.04, y: 12 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        className="w-[260vw] max-w-none translate-x-[8%] -translate-y-[24vh] sm:w-[140vw] sm:translate-x-0 sm:-translate-y-[8vh] lg:w-[min(1700px,118vw)]"
+        className="w-[260vw] max-w-none shrink-0 translate-x-[8%] -translate-y-[24vh] sm:w-screen sm:translate-x-0 sm:-translate-y-[2vh]"
         style={{ overflow: 'visible' }}
       >
         <defs>

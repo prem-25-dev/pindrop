@@ -81,7 +81,7 @@ function SettingsMenu() {
         whileTap={{ scale: 0.88, y: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 16 }}
       >
-        <ClayIcon name="settings" bare size={40} />
+        <ClayIcon name="settings" variant="bare" size={40} />
       </motion.button>
       <AnimatePresence>
         {open && mounted && (

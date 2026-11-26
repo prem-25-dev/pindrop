@@ -130,11 +130,19 @@ export default function StyleGuide() {
       </Section>
 
       <Section title="3D clay icons">
-        <div className="grid grid-cols-4 gap-6 sm:grid-cols-8">
+        <div className="grid grid-cols-3 gap-8 sm:grid-cols-4 lg:grid-cols-8">
           {clayIconNames.map((n) => (
             <div key={n} className="flex flex-col items-center gap-2">
-              <ClayIcon name={n} size={64} title={n} />
+              <ClayIcon name={n} size={96} title={n} />
               <span className="text-xs font-bold text-[var(--ink-3)]">{n}</span>
+            </div>
+          ))}
+        </div>
+        <p className="pt-4 text-sm font-bold text-[var(--ink-3)]">Object variant, used on coloured cards</p>
+        <div className="clay-tint tint-c3 grid grid-cols-3 gap-8 rounded-[32px] p-8 sm:grid-cols-4 lg:grid-cols-8">
+          {clayIconNames.map((n) => (
+            <div key={n} className="flex justify-center">
+              <ClayIcon name={n} size={96} variant="object" />
             </div>
           ))}
         </div>

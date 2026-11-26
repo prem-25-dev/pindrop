@@ -30,6 +30,18 @@ body {
 
 .text-balance { text-wrap: balance; }
 
+/* full-bleed sections must not cause sideways scrolling */
+body { overflow-x: clip; }
+
+/* flag ribbon drift */
+@keyframes ribbon-left { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes ribbon-right { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+.ribbon-left { animation: ribbon-left 90s linear infinite; }
+.ribbon-right { animation: ribbon-right 100s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ribbon-left, .ribbon-right { animation: none; }
+}
+
 /* cmdk palette items */
 [cmdk-item][data-selected="true"] {
   background: var(--surface);
