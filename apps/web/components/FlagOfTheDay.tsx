@@ -91,20 +91,25 @@ export function FlagOfTheDay() {
         </span>
       </div>
 
-      <div className="relative mx-auto mt-5 w-fit">
+      {/* the flag in its real proportions, as wide as the card (tall flags are capped and centred) */}
+      <div className="relative mt-5 flex justify-center">
         <motion.div
-          initial={{ rotate: -3 }}
-          animate={done && !reduce ? (right ? { rotate: [-3, 3, -2, 0], scale: [1, 1.06, 1] } : { x: [0, -8, 8, -5, 5, 0] }) : { rotate: -3 }}
+          initial={false}
+          animate={done && !reduce ? (right ? { rotate: [0, 2, -1.5, 0], scale: [1, 1.04, 1] } : { x: [0, -8, 8, -5, 5, 0] }) : { rotate: 0 }}
           transition={{ duration: 0.6 }}
           className="clay rounded-2xl p-2"
           data-elev="2"
+          // full card width; tall flags are capped at ~200px high so they never crop
+          style={{ width: q ? `min(100%, ${Math.round(200 * q.answer.flagRatio) + 16}px)` : '100%' }}
         >
-          {q ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={q.answer.flag} alt="Today's mystery flag" width={220} height={165} className="h-[132px] w-[176px] rounded-xl object-cover sm:h-[150px] sm:w-[200px]" />
-          ) : (
-            <div className="clay-well h-[132px] w-[176px] rounded-xl sm:h-[150px] sm:w-[200px]" />
-          )}
+          <div className="overflow-hidden rounded-xl" style={{ aspectRatio: q ? String(q.answer.flagRatio) : '3 / 2' }}>
+            {q ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={q.answer.flagTrue} alt="Today's mystery flag" className="block h-full w-full" />
+            ) : (
+              <div className="clay-well h-full w-full" />
+            )}
+          </div>
         </motion.div>
         <AnimatePresence>
           {right &&

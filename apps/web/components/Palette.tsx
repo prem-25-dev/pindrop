@@ -130,7 +130,9 @@ export function Palette() {
                       className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5"
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={c.flag} alt="" width={36} height={27} loading="lazy" className="h-[27px] w-9 rounded-md object-cover shadow-[0_2px_6px_var(--clay-drop-2)]" />
+                      <span className="flex h-[27px] w-10 shrink-0 items-center justify-center">
+                        <img src={c.flagTrue} alt="" loading="lazy" className="max-h-[27px] max-w-10 rounded-[5px] shadow-[0_2px_6px_var(--clay-drop-2)]" />
+                      </span>
                       <span className="font-extrabold">{c.name}</span>
                       {c.capital && <span className="truncate text-sm font-semibold text-[var(--ink-3)]">{c.capital.name}</span>}
                       <span className="ml-auto text-xs font-bold text-[var(--ink-3)]">{c.region}</span>

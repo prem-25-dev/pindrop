@@ -182,6 +182,46 @@
 
 :root { --focus: var(--accent); }
 
+/* ---------- background world map: one clay colour per continent ---------- */
+:root {
+  --land-na: #8ed9a9;  /* North America — mint */
+  --land-sa: #ffd77d;  /* South America — sun */
+  --land-eu: #9ec3ff;  /* Europe — sky */
+  --land-af: #ffb487;  /* Africa — apricot */
+  --land-as: #ff9eae;  /* Asia — coral */
+  --land-oc: #c6aaff;  /* Oceania — lilac */
+  --land-hi: rgba(255, 255, 255, 0.75);
+  --land-lo: rgba(60, 30, 10, 0.22);
+  --land-lift: 0.18;   /* how much each piece is lightened at its top edge */
+}
+.dark {
+  --land-na: #2f6e4d;
+  --land-sa: #86681f;
+  --land-eu: #2e5590;
+  --land-af: #8a4a2a;
+  --land-as: #873349;
+  --land-oc: #553f94;
+  --land-hi: rgba(255, 255, 255, 0.2);
+  --land-lo: rgba(0, 0, 0, 0.45);
+  --land-lift: 0.1;
+}
+
+@keyframes continent-float {
+  0% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(var(--fx, 0px), var(--fy, -5px), 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+.continent-float { animation: continent-float var(--fdur, 12s) ease-in-out var(--fdelay, 0s) infinite; will-change: transform; }
+.continent-parallax {
+  transform: translate3d(calc(var(--px, 0) * var(--depth, 8px)), calc(var(--py, 0) * var(--depth, 8px)), 0);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .continent-float { animation: none; }
+  .continent-parallax { transform: none; transition: none; }
+}
+
 /* ---------- wallpaper: calm, single-hue, no colour blobs ---------- */
 .clay-wallpaper {
   position: fixed;

@@ -15,6 +15,23 @@ const VERSION = 'v2026.11';
 const OUT = path.join(repo, 'apps/web/public/data', VERSION);
 const FLAGS_OUT = path.join(repo, 'apps/web/public/flags');
 const FLAGS_SRC = path.join(path.dirname(require.resolve('flag-icons/package.json')), 'flags/4x3');
+// True-proportion flags (Wikipedia-derived, public domain) for showing a flag on its own.
+// The 4:3 set above stays for map fills, where every flag needs the same box.
+const TRUE_FLAGS_SRC = path.join(path.dirname(require.resolve('svg-country-flags/package.json')), 'svg');
+const TRUE_FLAGS_OUT = path.join(repo, 'apps/web/public/flags/true');
+
+/** width / height of an SVG flag, from its viewBox or width/height attributes */
+function svgRatio(file) {
+  const head = fs.readFileSync(file, 'utf8').slice(0, 2000);
+  const vb = head.match(/viewBox="([^"]+)"/);
+  if (vb) {
+    const [, , w, h] = vb[1].trim().split(/[\s,]+/).map(Number);
+    if (w > 0 && h > 0) return +(w / h).toFixed(4);
+  }
+  const w = parseFloat(head.match(/\swidth="([\d.]+)/)?.[1] ?? '');
+  const h = parseFloat(head.match(/\sheight="([\d.]+)/)?.[1] ?? '');
+  return w > 0 && h > 0 ? +(w / h).toFixed(4) : null;
+}
 
 const raw = (f) => JSON.parse(fs.readFileSync(path.join(pkg, 'raw', f), 'utf8'));
 const topo = raw('countries-50m.json');
@@ -27,6 +44,7 @@ const SOURCES = {
   mledoze: { id: 'mledoze', name: 'mledoze/countries', license: 'ODbL', url: 'https://github.com/mledoze/countries' },
   naturalearth: { id: 'naturalearth', name: 'Natural Earth (via world-atlas)', license: 'Public domain', url: 'https://www.naturalearthdata.com/' },
   flagicons: { id: 'flagicons', name: 'flag-icons', license: 'MIT', url: 'https://github.com/lipis/flag-icons' },
+  countryflags: { id: 'countryflags', name: 'svg-country-flags (from Wikipedia)', license: 'Public domain', url: 'https://github.com/hjnilsson/country-flags' },
 };
 // Per-country deep link for a World Bank indicator
 const wbLink = (indicator, iso3) => `https://data.worldbank.org/indicator/${indicator}?locations=${iso3}`;
@@ -95,6 +113,14 @@ const countries = facts
       hasShape: shapeCodes.has(c.cca2),
       aliases: aliasesOf(c),
       flag: `/flags/${flagFile}`,
+      ...(() => {
+        const src = path.join(TRUE_FLAGS_SRC, flagFile);
+        if (!fs.existsSync(src)) {
+          if (isUN195(c)) problems.push(`no true-proportion flag: ${c.cca2}`);
+          return { flagTrue: `/flags/${flagFile}`, flagRatio: 4 / 3 };
+        }
+        return { flagTrue: `/flags/true/${flagFile}`, flagRatio: svgRatio(src) ?? 1.5 };
+      })(),
     };
   })
   .sort((a, b) => a.name.localeCompare(b.name));
@@ -110,20 +136,46 @@ fs.writeFileSync(path.join(OUT, 'world.topo.json'), JSON.stringify(topo));
 fs.writeFileSync(path.join(OUT, 'sources.json'), JSON.stringify(SOURCES, null, 2));
 fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.stringify({ version: VERSION, built: new Date().toISOString() }));
 
-// ---------- background map: one simplified land outline (Natural Earth 1:110m), no Antarctica ----------
+// ---------- background map: six continents (Natural Earth 1:110m), no Antarctica ----------
+// Countries are merged per continent. Russia is split at the Urals (~60°E) so Siberia sits in Asia.
 {
-  const { feature } = await import('topojson-client');
+  const { merge } = await import('topojson-client');
   const { geoEqualEarth, geoPath } = await import('d3-geo');
-  const landTopo = raw('land-110m.json');
-  const land = feature(landTopo, landTopo.objects.land);
-  const geom = land.features ? land.features[0].geometry : land.geometry;
-  const polys = (geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates])
-    .filter((poly) => poly[0].some(([, lat]) => lat > -60)); // drop Antarctica
+  const t110 = raw('countries-110m.json');
+  const regionOf = (c) => {
+    if (c.region === 'Americas') return c.subregion === 'South America' ? 'sa' : 'na';
+    return { Africa: 'af', Europe: 'eu', Asia: 'as', Oceania: 'oc' }[c.region] ?? null;
+  };
+  const BY_NAME = { Kosovo: 'eu', 'N. Cyprus': 'eu', Somaliland: 'af' };
+  const groups = { na: [], sa: [], eu: [], af: [], as: [], oc: [] };
+  let russia = null;
+  for (const g of t110.objects.countries.geometries) {
+    const c = byNumeric.get(g.id);
+    if (c?.cca2 === 'RU') { russia = g; continue; }
+    const k = c ? regionOf(c) : BY_NAME[g.properties?.name];
+    if (k) groups[k].push(g);
+    else if (!c || c.region !== 'Antarctic') problems.push(`continent unknown: ${g.id} ${g.properties?.name}`);
+  }
+
   const W = 1000, H = 470;
-  const shape = { type: 'MultiPolygon', coordinates: polys };
-  const projection = geoEqualEarth().fitExtent([[8, 8], [W - 8, H - 8]], shape);
-  const d = geoPath(projection).digits(1)(shape);
-  fs.writeFileSync(path.join(OUT, 'world-land.json'), JSON.stringify({ w: W, h: H, d, src: 'naturalearth' }));
+  const shapes = Object.fromEntries(Object.entries(groups).map(([k, gs]) => [k, merge(t110, gs)]));
+  const all = { type: 'FeatureCollection', features: [...Object.values(shapes), merge(t110, [russia])].map((geometry) => ({ type: 'Feature', geometry })) };
+  const projection = geoEqualEarth().fitExtent([[8, 8], [W - 8, H - 8]], all);
+  const pathOf = (geom, extent) => {
+    const p = extent ? geoEqualEarth().scale(projection.scale()).translate(projection.translate()).clipExtent(extent) : projection;
+    return geoPath(p).digits(1)(geom) ?? '';
+  };
+
+  const ural = projection([60, 58])[0];
+  const ru = merge(t110, [russia]);
+  const NAMES = { na: 'North America', sa: 'South America', eu: 'Europe', af: 'Africa', as: 'Asia', oc: 'Oceania' };
+  const continents = Object.entries(shapes).map(([id, geom]) => {
+    let d = pathOf(geom);
+    if (id === 'eu') d += pathOf(ru, [[0, 0], [ural, H]]);
+    if (id === 'as') d += pathOf(ru, [[ural, 0], [W, H]]);
+    return { id, name: NAMES[id], d };
+  });
+  fs.writeFileSync(path.join(OUT, 'world-continents.json'), JSON.stringify({ w: W, h: H, continents, src: 'naturalearth' }));
 }
 
 let copied = 0;
@@ -131,6 +183,11 @@ for (const c of countries) {
   const f = `${c.code.toLowerCase()}.svg`;
   const src = path.join(FLAGS_SRC, f);
   if (fs.existsSync(src)) { fs.copyFileSync(src, path.join(FLAGS_OUT, f)); copied++; }
+  const trueSrc = path.join(TRUE_FLAGS_SRC, f);
+  if (fs.existsSync(trueSrc)) {
+    fs.mkdirSync(TRUE_FLAGS_OUT, { recursive: true });
+    fs.copyFileSync(trueSrc, path.join(TRUE_FLAGS_OUT, f));
+  }
 }
 
 const kb = (f) => `${Math.round(fs.statSync(path.join(OUT, f)).size / 1024)} KB`;

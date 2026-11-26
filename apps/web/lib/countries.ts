@@ -12,7 +12,12 @@ export interface CountryIndexItem {
   un195: boolean;
   capital: { name: string; lat: number | null; lng: number | null } | null;
   aliases: string[];
+  /** 4:3 flag, for map fills and uniform boxes */
   flag: string;
+  /** flag in its real proportions, for showing a flag on its own */
+  flagTrue: string;
+  /** width / height of the real flag */
+  flagRatio: number;
 }
 
 let cache: Promise<CountryIndexItem[]> | null = null;

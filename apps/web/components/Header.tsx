@@ -30,7 +30,7 @@ function SearchButton() {
   return (
     <button
       onClick={openPalette}
-      className="clay clay-interactive clay-focus flex h-11 items-center gap-2 rounded-full pl-3 pr-3 text-sm font-bold text-[var(--ink-2)] sm:pr-2"
+      className="clay clay-interactive clay-focus flex h-11 items-center gap-2 rounded-full pl-3.5 pr-3.5 text-sm font-bold text-[var(--ink-2)] sm:pr-4"
       data-elev="1"
       aria-label="Search countries and capitals"
     >
@@ -39,7 +39,7 @@ function SearchButton() {
         <path d="m20 20-3.5-3.5" />
       </svg>
       <span className="hidden sm:inline">Search</span>
-      <kbd className="clay-well hidden rounded-lg px-2 py-0.5 font-sans text-[11px] font-extrabold text-[var(--ink-3)] sm:inline">
+      <kbd className="ml-1 hidden font-sans text-[10px] font-bold tracking-wide text-[var(--ink-3)] opacity-60 sm:inline">
         {isMac ? '⌘K' : 'Ctrl K'}
       </kbd>
     </button>
