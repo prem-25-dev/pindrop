@@ -5,7 +5,7 @@ import type { CSSProperties } from 'react';
 import { ClayIcon } from '@pinpoint/ui';
 import type { Mode } from '@/lib/modes';
 
-const KIND_LABEL = { explore: 'Explore', solo: 'Solo', party: 'Multiplayer' } as const;
+const KIND_LABEL = { explore: 'Explore', game: 'Solo · Party', party: 'Multiplayer' } as const;
 
 /**
  * A colourful clay game card: tinted clay slab, a big 3D illustration popping out of the

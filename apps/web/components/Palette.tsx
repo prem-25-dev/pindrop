@@ -117,7 +117,7 @@ export function Palette() {
                     <Command.Item key={m.id} value={`mode ${m.title}`} onSelect={() => go(m.href)} className="flex cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5">
                       <ClayIcon name={m.icon} size={34} />
                       <span className="font-extrabold">{m.title}</span>
-                      <span className="ml-auto text-xs font-bold capitalize text-[var(--ink-3)]">{m.kind}</span>
+                      <span className="ml-auto text-xs font-bold text-[var(--ink-3)]">{m.kind === 'game' ? 'Solo · Party' : m.kind === 'party' ? 'Multiplayer' : 'Explore'}</span>
                     </Command.Item>
                   ))}
                 </Command.Group>}

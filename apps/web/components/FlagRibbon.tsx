@@ -20,7 +20,8 @@ export function FlagRibbon() {
       {(rows ?? [[], []]).map((row, r) => (
         <div key={r} className={`flex w-max items-center gap-3 ${r ? 'ribbon-right' : 'ribbon-left'}`}>
           {(row.length ? [...row, ...row] : Array.from({ length: 24 }, () => null)).map((c, i) => (
-            <div key={i} className="clay shrink-0 rounded-2xl p-1.5" data-elev="1">
+            // thin clay rim: 3px padding, outer radius = inner radius (8px) + padding, so corners run parallel
+            <div key={i} className="clay shrink-0 p-[3px]" data-elev="1" style={{ borderRadius: 11 }}>
               {c ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -29,11 +30,11 @@ export function FlagRibbon() {
                   loading="lazy"
                   height={H}
                   width={Math.round(H * Math.min(c.flagRatio, 2.6))}
-                  className="block rounded-[10px] object-contain"
+                  className="block rounded-[8px] object-contain"
                   style={{ height: H, width: Math.round(H * Math.min(c.flagRatio, 2.6)) }}
                 />
               ) : (
-                <div className="clay-well rounded-[10px]" style={{ height: H, width: H * 1.5 }} />
+                <div className="clay-well rounded-[8px]" style={{ height: H, width: H * 1.5 }} />
               )}
             </div>
           ))}

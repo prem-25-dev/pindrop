@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 type Continent = { id: 'na' | 'sa' | 'eu' | 'af' | 'as' | 'oc'; name: string; d: string };
-type World = { w: number; h: number; continents: Continent[] };
+type World = { w: number; h: number; sphere: string; graticule: string; continents: Continent[] };
 
 let cache: Promise<World> | null = null;
 const loadWorld = () =>
@@ -22,10 +22,46 @@ const MOTION: Record<Continent['id'], { dur: number; delay: number; fx: number; 
   oc: { dur: 10, delay: -4, fx: -2, fy: -7, depth: 16 },
 };
 
+/** Inner-shadow + cast-shadow filter shared by the continents (raised) and the sea plate (sunken). */
+function ClayFilter({ id, raised }: { id: string; raised: boolean }) {
+  // raised: shade bottom-right, light top-left, cast shadow below. sunken: the reverse, no cast shadow.
+  const s = raised ? 1 : -1;
+  return (
+    <filter id={id} x="-5%" y="-5%" width="110%" height="118%" colorInterpolationFilters="sRGB">
+      <feComponentTransfer in="SourceAlpha" result="inv">
+        <feFuncA type="table" tableValues="1 0" />
+      </feComponentTransfer>
+      <feGaussianBlur in="inv" stdDeviation={raised ? 2.4 : 4} result="blur" />
+      <feOffset in="blur" dx={-2.2 * s} dy={-2.6 * s} result="dk" />
+      <feFlood style={{ floodColor: raised ? 'var(--land-lo)' : 'var(--clay-lo)' }} />
+      <feComposite in2="dk" operator="in" />
+      <feComposite in2="SourceAlpha" operator="in" result="shadeDark" />
+      <feOffset in="blur" dx={1.8 * s} dy={2.2 * s} result="lt" />
+      <feFlood style={{ floodColor: raised ? 'var(--land-hi)' : 'var(--clay-hi)' }} />
+      <feComposite in2="lt" operator="in" />
+      <feComposite in2="SourceAlpha" operator="in" result="shadeLight" />
+      {raised ? (
+        <>
+          <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="castBlur" />
+          <feOffset in="castBlur" dx="0" dy="7" result="castOff" />
+          <feFlood style={{ floodColor: 'var(--clay-drop)' }} />
+          <feComposite in2="castOff" operator="in" result="cast" />
+        </>
+      ) : null}
+      <feMerge>
+        {raised && <feMergeNode in="cast" />}
+        <feMergeNode in="SourceGraphic" />
+        <feMergeNode in="shadeDark" />
+        <feMergeNode in="shadeLight" />
+      </feMerge>
+    </filter>
+  );
+}
+
 /**
- * The wallpaper's world map: six clay continents, each in its own colour, molded with
- * inner shadows and a soft cast shadow. They drift gently and shift a little with the pointer.
- * Purely decorative.
+ * The wallpaper's world map, Equal Earth projection: a sunken clay sea plate in the Equal Earth
+ * outline with a faint 30° grid, and six raised clay continents, each in its own colour, drifting
+ * gently and shifting a little with the pointer. Purely decorative.
  */
 export function WorldBackdrop() {
   const [world, setWorld] = useState<World | null>(null);
@@ -66,15 +102,36 @@ export function WorldBackdrop() {
   }, [reduce, world]);
 
   if (!world) return null;
-  const { w, h, continents } = world;
+  const { w, h, sphere, graticule, continents } = world;
+  const viewBox = `0 0 ${w} ${h}`;
 
   return (
     <div aria-hidden className="pointer-events-none fixed inset-0 z-[-1] flex items-center justify-center overflow-hidden">
+      {/* 86% of the viewport width on tablet/desktop; zoomed in on phones so the land stays readable */}
       <div
         ref={box}
-        className="relative w-[260vw] max-w-none shrink-0 translate-x-[8%] -translate-y-[24vh] sm:w-screen sm:translate-x-0 sm:-translate-y-[2vh]"
+        className="relative w-[240vw] max-w-none shrink-0 translate-x-[6%] -translate-y-[22vh] sm:w-[86vw] sm:translate-x-0 sm:translate-y-[2vh]"
         style={{ aspectRatio: `${w} / ${h}` }}
       >
+        {/* sea plate: the Equal Earth outline pressed into the clay, with a faint graticule */}
+        <motion.svg
+          viewBox={viewBox}
+          className="absolute inset-0 h-full w-full"
+          style={{ overflow: 'visible' }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.8 }}
+        >
+          <defs>
+            <ClayFilter id="sea-clay" raised={false} />
+            <clipPath id="sea-clip">
+              <path d={sphere} />
+            </clipPath>
+          </defs>
+          <path d={sphere} fill="var(--bg-2)" filter="url(#sea-clay)" opacity="0.9" />
+          <path d={graticule} fill="none" stroke="var(--ink)" strokeOpacity="0.07" strokeWidth="0.8" clipPath="url(#sea-clip)" />
+        </motion.svg>
+
         {continents.map((c, i) => {
           const m = MOTION[c.id];
           const id = `land-${c.id}`;
@@ -85,48 +142,25 @@ export function WorldBackdrop() {
               className="absolute inset-0"
               initial={reduce ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.985 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 1.1, delay: 0.08 * i, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 1.1, delay: 0.15 + 0.08 * i, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="continent-parallax absolute inset-0" style={{ '--depth': `${m.depth}px` } as CSSProperties}>
-              <div
-                className="continent-float absolute inset-0"
-                style={{ '--fdur': `${m.dur}s`, '--fdelay': `${m.delay}s`, '--fx': `${m.fx}px`, '--fy': `${m.fy}px` } as CSSProperties}
-              >
-                <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full" style={{ overflow: 'visible' }}>
-                  <defs>
-                    <linearGradient id={`${id}-fill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={w * 0.35} y2={h}>
-                      <stop offset="0" style={{ stopColor: `color-mix(in oklab, ${color}, white calc(var(--land-lift) * 100%))` }} />
-                      <stop offset="0.55" style={{ stopColor: color }} />
-                      <stop offset="1" style={{ stopColor: `color-mix(in oklab, ${color} 86%, black)` }} />
-                    </linearGradient>
-                    <filter id={`${id}-clay`} x="-5%" y="-5%" width="110%" height="118%" colorInterpolationFilters="sRGB">
-                      <feComponentTransfer in="SourceAlpha" result="inv">
-                        <feFuncA type="table" tableValues="1 0" />
-                      </feComponentTransfer>
-                      <feGaussianBlur in="inv" stdDeviation="2.4" result="blur" />
-                      <feOffset in="blur" dx="-2.2" dy="-2.6" result="dk" />
-                      <feFlood style={{ floodColor: 'var(--land-lo)' }} />
-                      <feComposite in2="dk" operator="in" />
-                      <feComposite in2="SourceAlpha" operator="in" result="shadeDark" />
-                      <feOffset in="blur" dx="1.8" dy="2.2" result="lt" />
-                      <feFlood style={{ floodColor: 'var(--land-hi)' }} />
-                      <feComposite in2="lt" operator="in" />
-                      <feComposite in2="SourceAlpha" operator="in" result="shadeLight" />
-                      <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="castBlur" />
-                      <feOffset in="castBlur" dx="0" dy="7" result="castOff" />
-                      <feFlood style={{ floodColor: 'var(--clay-drop)' }} />
-                      <feComposite in2="castOff" operator="in" result="cast" />
-                      <feMerge>
-                        <feMergeNode in="cast" />
-                        <feMergeNode in="SourceGraphic" />
-                        <feMergeNode in="shadeDark" />
-                        <feMergeNode in="shadeLight" />
-                      </feMerge>
-                    </filter>
-                  </defs>
-                  <path d={c.d} fill={`url(#${id}-fill)`} filter={`url(#${id}-clay)`} />
-                </svg>
-              </div>
+                <div
+                  className="continent-float absolute inset-0"
+                  style={{ '--fdur': `${m.dur}s`, '--fdelay': `${m.delay}s`, '--fx': `${m.fx}px`, '--fy': `${m.fy}px` } as CSSProperties}
+                >
+                  <svg viewBox={viewBox} className="h-full w-full" style={{ overflow: 'visible' }}>
+                    <defs>
+                      <linearGradient id={`${id}-fill`} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2={w * 0.35} y2={h}>
+                        <stop offset="0" style={{ stopColor: `color-mix(in oklab, ${color}, white calc(var(--land-lift) * 100%))` }} />
+                        <stop offset="0.55" style={{ stopColor: color }} />
+                        <stop offset="1" style={{ stopColor: `color-mix(in oklab, ${color} 86%, black)` }} />
+                      </linearGradient>
+                      <ClayFilter id={`${id}-clay`} raised />
+                    </defs>
+                    <path d={c.d} fill={`url(#${id}-fill)`} filter={`url(#${id}-clay)`} />
+                  </svg>
+                </div>
               </div>
             </motion.div>
           );

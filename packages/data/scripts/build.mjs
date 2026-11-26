@@ -110,6 +110,8 @@ const countries = facts
       area: c.area > 0 ? { v: c.area, year: null, src: 'mledoze' } : null,
       population: pop ? { v: pop.v, year: pop.year, src: 'worldbank', url: wbLink('SP.POP.TOTL', c.cca3) } : null,
       landlocked: !!c.landlocked,
+      languages: Object.values(c.languages || {}).slice(0, 3),
+      currency: Object.entries(c.currencies || {}).map(([code, v]) => ({ code, name: v.name, symbol: v.symbol || '' }))[0] ?? null,
       hasShape: shapeCodes.has(c.cca2),
       aliases: aliasesOf(c),
       flag: `/flags/${flagFile}`,
@@ -137,7 +139,7 @@ fs.writeFileSync(path.join(OUT, 'sources.json'), JSON.stringify(SOURCES, null, 2
 fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.stringify({ version: VERSION, built: new Date().toISOString() }));
 
 // ---------- background map: six continents (Natural Earth 1:110m), no Antarctica ----------
-// Countries are merged per continent. Russia is split at the Urals (~60°E) so Siberia sits in Asia.
+// Countries are merged per continent. Russia is split along the Ural ridge so Siberia sits in Asia.
 {
   const { merge } = await import('topojson-client');
   const { geoEqualEarth, geoPath } = await import('d3-geo');
@@ -157,25 +159,53 @@ fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.str
     else if (!c || c.region !== 'Antarctic') problems.push(`continent unknown: ${g.id} ${g.properties?.name}`);
   }
 
-  const W = 1000, H = 470;
+  const { default: clip } = await import('polygon-clipping');
+  const { geoGraticule } = await import('d3-geo');
   const shapes = Object.fromEntries(Object.entries(groups).map(([k, gs]) => [k, merge(t110, gs)]));
-  const all = { type: 'FeatureCollection', features: [...Object.values(shapes), merge(t110, [russia])].map((geometry) => ({ type: 'Feature', geometry })) };
-  const projection = geoEqualEarth().fitExtent([[8, 8], [W - 8, H - 8]], all);
-  const pathOf = (geom, extent) => {
-    const p = extent ? geoEqualEarth().scale(projection.scale()).translate(projection.translate()).clipExtent(extent) : projection;
-    return geoPath(p).digits(1)(geom) ?? '';
-  };
 
-  const ural = projection([60, 58])[0];
-  const ru = merge(t110, [russia]);
+  // Europe–Asia line through Russia: the Ural ridge from the Kara Sea (Baydaratskaya Bay)
+  // south to the Kazakh border near Orsk. West of it is Europe, east of it is Asia.
+  const URALS = [[68.5, 69.6], [66.2, 67.8], [64.6, 66.3], [61.2, 64.6], [59.4, 62.4], [59.2, 60.2], [59.6, 58.2], [59.3, 56.4], [59.8, 54.6], [58.9, 52.6], [58.5, 50.6]];
+  const EUROPE_SIDE = [[...URALS, [58.5, 40], [15, 40], [15, 85], [70, 85], [70, 70.5], URALS[0]]];
+  const ASIA_SIDE = [[...URALS, [58.5, 40], [200, 40], [200, 85], [70, 85], [70, 70.5], URALS[0]]];
+  // Russia's outline is stitched across the antimeridian (+180 → −180). On a flat plane that jump
+  // spans the whole map, so unwrap it first: −170° becomes 190°. d3-geo reads angles past 180 fine.
+  const unwrap = (mp) => mp.map((poly) => poly.map((ring) => ring.map(([lon, lat]) => [lon < -100 ? lon + 360 : lon, lat])));
+  const ru = unwrap(merge(t110, [russia]).coordinates);
+  // polygon-clipping winds rings for a flat plane; d3-geo is spherical and may read a ring as
+  // "everything except this shape". Orient each piece so it covers the smaller area (pieces that
+  // cross ±180° come out the other way round, so this is decided per piece, not globally).
+  const { geoArea } = await import('d3-geo');
+  const forD3 = (mp) =>
+    mp.map((poly) => (geoArea({ type: 'Polygon', coordinates: poly }) > 2 * Math.PI ? poly.map((ring) => ring.slice().reverse()) : poly));
+  const ruEurope = forD3(clip.intersection(ru, EUROPE_SIDE));
+  const ruAsia = forD3(clip.intersection(ru, ASIA_SIDE));
+  shapes.eu = { type: 'MultiPolygon', coordinates: [...shapes.eu.coordinates, ...ruEurope] };
+  shapes.as = { type: 'MultiPolygon', coordinates: [...shapes.as.coordinates, ...ruAsia] };
+
+  // Equal Earth, centred at 11°E (the usual convention) so Chukotka and the Pacific islands stay
+  // on the right edge instead of wrapping to the left. Fit the whole oval to the width.
+  const W = 1000, PAD = 6;
+  const projection = geoEqualEarth().rotate([-11, 0]).fitWidth(W - PAD * 2, { type: 'Sphere' });
+  const [tx, ty] = projection.translate();
+  projection.translate([tx + PAD, ty + PAD]);
+  const gp = geoPath(projection).digits(1);
+  const H = Math.ceil(gp.bounds({ type: 'Sphere' })[1][1] + PAD);
+
   const NAMES = { na: 'North America', sa: 'South America', eu: 'Europe', af: 'Africa', as: 'Asia', oc: 'Oceania' };
-  const continents = Object.entries(shapes).map(([id, geom]) => {
-    let d = pathOf(geom);
-    if (id === 'eu') d += pathOf(ru, [[0, 0], [ural, H]]);
-    if (id === 'as') d += pathOf(ru, [[ural, 0], [W, H]]);
-    return { id, name: NAMES[id], d };
-  });
-  fs.writeFileSync(path.join(OUT, 'world-continents.json'), JSON.stringify({ w: W, h: H, continents, src: 'naturalearth' }));
+  const continents = Object.entries(shapes).map(([id, geom]) => ({ id, name: NAMES[id], d: gp(geom) }));
+  fs.writeFileSync(
+    path.join(OUT, 'world-continents.json'),
+    JSON.stringify({
+      w: W,
+      h: H,
+      projection: 'Equal Earth, centred 11°E',
+      sphere: gp({ type: 'Sphere' }),
+      graticule: gp(geoGraticule().step([30, 30])()),
+      continents,
+      src: 'naturalearth',
+    }),
+  );
 }
 
 let copied = 0;

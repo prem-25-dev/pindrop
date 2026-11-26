@@ -12,6 +12,11 @@ export interface CountryIndexItem {
   un195: boolean;
   capital: { name: string; lat: number | null; lng: number | null } | null;
   aliases: string[];
+  population: { v: number; year: number; src: string; url: string } | null;
+  area: { v: number; year: null; src: string } | null;
+  languages: string[];
+  currency: { code: string; name: string; symbol: string } | null;
+  landlocked: boolean;
   /** 4:3 flag, for map fills and uniform boxes */
   flag: string;
   /** flag in its real proportions, for showing a flag on its own */

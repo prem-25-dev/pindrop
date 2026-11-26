@@ -50,6 +50,7 @@ Free, no ads, open source, self-hosted on Coolify.
 | F-10 | Difficulty Tourist (choices) / Navigator (fuzzy typing ≥ 67%) / Cartographer (exact spelling, any case) | v1 |
 | F-11 | Scope for every game: World, continent, subregion, group | v1 |
 | F-12 | Guess the flag, Pin drop (borderless / with borders), Find the region: solo and party | v1 |
+| F-12a | **Every game is both single-player and multiplayer**: each mode can be played solo or in a party room (same rules, scored per player or per team) | v1 (v2 modes follow the same rule) |
 | F-13 | Rooms: code, link, QR, public list; up to 50 players; host handover; settings by vote (host breaks ties); chat; teams | v1 |
 | F-14 | Accounts: guest nickname, Google, email + password, @handle + display name | v1 |
 | F-15 | Original mix-and-match avatars that react, with unlockable items | v1 |
@@ -58,7 +59,7 @@ Free, no ads, open source, self-hosted on Coolify.
 | F-18 | Installable app with offline solo games | v1 |
 | F-19 | Remaining solo modes (11) and Daily mix + streak | v2 |
 | F-20 | Passport trivia with Bronze / Silver / Gold stamps, one try per day | v2 |
-| F-21 | Rarity with ~100 categories and global obscurity scoring | v2 |
+| F-21 | Rarity with ~100 categories and global obscurity scoring, solo or in a room | v2 |
 | F-22 | Community submissions + review queue (admin, moderator) | v2 |
 | F-23 | Friend challenges (same seed) | v2 |
 | F-24 | Full set of ~40 data layers | v2 |
