@@ -142,7 +142,7 @@ fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.str
 // Countries are merged per continent. Russia is split along the Ural ridge so Siberia sits in Asia.
 {
   const { merge } = await import('topojson-client');
-  const { geoEqualEarth, geoPath } = await import('d3-geo');
+  const { geoPath } = await import('d3-geo');
   const t110 = raw('countries-110m.json');
   const regionOf = (c) => {
     if (c.region === 'Americas') return c.subregion === 'South America' ? 'sa' : 'na';
@@ -160,7 +160,6 @@ fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.str
   }
 
   const { default: clip } = await import('polygon-clipping');
-  const { geoGraticule } = await import('d3-geo');
   const shapes = Object.fromEntries(Object.entries(groups).map(([k, gs]) => [k, merge(t110, gs)]));
 
   // Europe–Asia line through Russia: the Ural ridge from the Kara Sea (Baydaratskaya Bay)
@@ -183,14 +182,19 @@ fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.str
   shapes.eu = { type: 'MultiPolygon', coordinates: [...shapes.eu.coordinates, ...ruEurope] };
   shapes.as = { type: 'MultiPolygon', coordinates: [...shapes.as.coordinates, ...ruAsia] };
 
-  // Equal Earth, centred at 11°E (the usual convention) so Chukotka and the Pacific islands stay
-  // on the right edge instead of wrapping to the left. Fit the whole oval to the width.
+  // Miller cylindrical: straight, vertical meridians so nothing near the edges is slanted or
+  // twisted (pseudo-cylindrical maps like Equal Earth/Robinson curve the edges), with far less
+  // polar stretch than Mercator. Centred at 11°E so Chukotka and the Pacific islands don't wrap.
+  const { geoProjection } = await import('d3-geo');
+  const millerRaw = (lambda, phi) => [lambda, 1.25 * Math.log(Math.tan(Math.PI / 4 + 0.4 * phi))];
+  millerRaw.invert = (x, y) => [x, 2.5 * Math.atan(Math.exp(0.8 * y)) - 0.625 * Math.PI];
+  const land = { type: 'FeatureCollection', features: Object.values(shapes).map((geometry) => ({ type: 'Feature', geometry })) };
   const W = 1000, PAD = 6;
-  const projection = geoEqualEarth().rotate([-11, 0]).fitWidth(W - PAD * 2, { type: 'Sphere' });
+  const projection = geoProjection(millerRaw).rotate([-11, 0]).fitWidth(W - PAD * 2, land);
   const [tx, ty] = projection.translate();
   projection.translate([tx + PAD, ty + PAD]);
   const gp = geoPath(projection).digits(1);
-  const H = Math.ceil(gp.bounds({ type: 'Sphere' })[1][1] + PAD);
+  const H = Math.ceil(gp.bounds(land)[1][1] + PAD);
 
   const NAMES = { na: 'North America', sa: 'South America', eu: 'Europe', af: 'Africa', as: 'Asia', oc: 'Oceania' };
   const continents = Object.entries(shapes).map(([id, geom]) => ({ id, name: NAMES[id], d: gp(geom) }));
@@ -199,9 +203,7 @@ fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.str
     JSON.stringify({
       w: W,
       h: H,
-      projection: 'Equal Earth, centred 11°E',
-      sphere: gp({ type: 'Sphere' }),
-      graticule: gp(geoGraticule().step([30, 30])()),
+      projection: 'Miller cylindrical, centred 11°E',
       continents,
       src: 'naturalearth',
     }),

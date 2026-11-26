@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 type Continent = { id: 'na' | 'sa' | 'eu' | 'af' | 'as' | 'oc'; name: string; d: string };
-type World = { w: number; h: number; sphere: string; graticule: string; continents: Continent[] };
+type World = { w: number; h: number; continents: Continent[] };
 
 let cache: Promise<World> | null = null;
 const loadWorld = () =>
@@ -59,8 +59,8 @@ function ClayFilter({ id, raised }: { id: string; raised: boolean }) {
 }
 
 /**
- * The wallpaper's world map, Equal Earth projection: a sunken clay sea plate in the Equal Earth
- * outline with a faint 30° grid, and six raised clay continents, each in its own colour, drifting
+ * The wallpaper's world map (Miller cylindrical: straight meridians, nothing slanted at the edges):
+ * six raised clay continents, each in its own colour, drifting
  * gently and shifting a little with the pointer. Purely decorative.
  */
 export function WorldBackdrop() {
@@ -102,7 +102,7 @@ export function WorldBackdrop() {
   }, [reduce, world]);
 
   if (!world) return null;
-  const { w, h, sphere, graticule, continents } = world;
+  const { w, h, continents } = world;
   const viewBox = `0 0 ${w} ${h}`;
 
   return (
@@ -113,25 +113,6 @@ export function WorldBackdrop() {
         className="relative w-[240vw] max-w-none shrink-0 translate-x-[6%] -translate-y-[22vh] sm:w-[86vw] sm:translate-x-0 sm:translate-y-[2vh]"
         style={{ aspectRatio: `${w} / ${h}` }}
       >
-        {/* sea plate: the Equal Earth outline pressed into the clay, with a faint graticule */}
-        <motion.svg
-          viewBox={viewBox}
-          className="absolute inset-0 h-full w-full"
-          style={{ overflow: 'visible' }}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.8 }}
-        >
-          <defs>
-            <ClayFilter id="sea-clay" raised={false} />
-            <clipPath id="sea-clip">
-              <path d={sphere} />
-            </clipPath>
-          </defs>
-          <path d={sphere} fill="var(--bg-2)" filter="url(#sea-clay)" opacity="0.9" />
-          <path d={graticule} fill="none" stroke="var(--ink)" strokeOpacity="0.07" strokeWidth="0.8" clipPath="url(#sea-clip)" />
-        </motion.svg>
-
         {continents.map((c, i) => {
           const m = MOTION[c.id];
           const id = `land-${c.id}`;
