@@ -147,6 +147,12 @@ const countries = facts
 const un = countries.filter((c) => c.un195).length;
 if (un !== 195) problems.push(`expected 195 UN countries, got ${un}`);
 
+// ---------- Explore layers (time series, categories) ----------
+const { buildLayers } = await import('./layers.mjs');
+fs.mkdirSync(OUT, { recursive: true });
+const layerInfo = buildLayers({ rawDir: path.join(pkg, 'raw'), outDir: OUT, countries, facts, problems });
+console.log(`[layers] ${layerInfo.summary}`);
+
 // ---------- write ----------
 fs.mkdirSync(OUT, { recursive: true });
 fs.mkdirSync(FLAGS_OUT, { recursive: true });

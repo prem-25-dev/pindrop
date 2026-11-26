@@ -1,5 +1,6 @@
 'use client';
 import { geoArea, geoPath, geoProjection, type GeoProjection } from 'd3-geo';
+import polylabel from 'polylabel';
 import { feature } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import type { Topology, GeometryCollection } from 'topojson-specification';
@@ -24,6 +25,8 @@ export interface CountryShape {
   /** projected area of the largest landmass (user units²) */
   area: number;
   centroid: [number, number];
+  /** visual centre: the point deepest inside the largest landmass (where a flag emblem should sit) */
+  center: [number, number];
 }
 
 export interface WorldShapes {
@@ -76,12 +79,18 @@ function build(topo: Topology<{ countries: GeometryCollection<{ disputed?: strin
     );
     const largest = polys.reduce((a, b) => (geoArea(b) > geoArea(a) ? b : a));
     const d = feats.map((f) => path(f) ?? '').join('');
+    const box = path.bounds(largest) as [[number, number], [number, number]];
+    // pole of inaccessibility, computed on the projected outline (what you actually see)
+    const rings = largest.coordinates.map((ring) => ring.map((pt): [number, number] => projection(pt as [number, number]) ?? [0, 0]));
+    const precision = Math.max(0.05, Math.min(box[1][0] - box[0][0], box[1][1] - box[0][1]) / 200);
+    const pole = polylabel(rings, precision);
     shapes.push({
       code,
       d,
-      box: path.bounds(largest) as [[number, number], [number, number]],
+      box,
       area: path.area(largest),
       centroid: path.centroid(largest) as [number, number],
+      center: Number.isFinite(pole[0]) ? [pole[0], pole[1]] : (path.centroid(largest) as [number, number]),
     });
   }
   // draw big countries first so small ones sit on top

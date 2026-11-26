@@ -10,6 +10,8 @@ export interface ExploreMapHandle {
   flyTo: (code: string, opts?: { panelOpen?: boolean }) => void;
   zoomBy: (factor: number) => void;
   reset: () => void;
+  /** fit a lon/lat box, e.g. a continent: [[west, south], [east, north]] */
+  fitView: (view: [[number, number], [number, number]]) => void;
 }
 
 interface Props {
@@ -22,25 +24,27 @@ interface Props {
   describe?: (code: string) => string | null;
   selected: string | null;
   onSelect: (code: string | null) => void;
+  /** false = outside the chosen continent: faded and not clickable */
+  active: (code: string) => boolean;
 }
 
 /**
- * Fit a 4:3 flag to a country's main landmass so the whole flag spans the country.
- * The flag is stretched to the country's box, but never distorted more than MAX_STRETCH×;
- * past that (Chile, Norway, Russia…) the extra is trimmed evenly from both sides, keeping the
- * flag centred. Returns the pattern tile (= country box) and the image rect inside it.
+ * Fit a 4:3 flag to a country so its emblem sits on the country's visual centre (e.g. India's
+ * chakra over central India) and the flag still spans the whole country:
+ *  - the flag is centred on the visual centre (pole of inaccessibility of the main landmass)
+ *  - it extends far enough each way to cover the country's box (the shape clips the overflow)
+ *  - stretching is capped at MAX_STRETCH× so emblems stay recognisable; past that, it only grows
+ * Returns one rect: the pattern tile and the image are the same box.
  */
 const FLAG = 4 / 3;
 const MAX_STRETCH = 2.2;
-function flagFit([[x0, y0], [x1, y1]]: [[number, number], [number, number]]) {
-  const bw = Math.max(x1 - x0, 0.5);
-  const bh = Math.max(y1 - y0, 0.5);
-  const aspect = bw / bh;
-  let iw = bw;
-  let ih = bh;
-  if (aspect / FLAG > MAX_STRETCH) ih = bw / (FLAG * MAX_STRETCH); // very wide: keep width, trim top/bottom
-  else if (FLAG / aspect > MAX_STRETCH) iw = (bh * FLAG) / MAX_STRETCH; // very tall: keep height, trim sides
-  return { px: x0, py: y0, pw: bw, ph: bh, ix: (bw - iw) / 2, iy: (bh - ih) / 2, iw, ih };
+function flagFit([[x0, y0], [x1, y1]]: [[number, number], [number, number]], [cx, cy]: [number, number]) {
+  let hw = Math.max(cx - x0, x1 - cx, 0.25);
+  let hh = Math.max(cy - y0, y1 - cy, 0.25);
+  const aspect = hw / hh;
+  if (aspect / FLAG > MAX_STRETCH) hh = hw / (FLAG * MAX_STRETCH); // very wide country: taller flag, trimmed top/bottom
+  else if (FLAG / aspect > MAX_STRETCH) hw = (hh * FLAG) / MAX_STRETCH; // very tall country: wider flag, trimmed sides
+  return { x: cx - hw, y: cy - hh, w: hw * 2, h: hh * 2 };
 }
 
 /** countries smaller than this (user units², largest landmass) also get a round flag pin */
@@ -49,8 +53,9 @@ const MAX_K = 40;
 
 /* ---------- base layer: rendered once per mode/colours, not on hover ---------- */
 const BaseLayer = memo(function BaseLayer({
-  world, countries, mode, colorFor, onEnter, onSelect,
+  world, countries, mode, colorFor, active, onEnter, onSelect,
 }: {
+  active: (code: string) => boolean;
   world: WorldShapes;
   countries: Map<string, CountryIndexItem>;
   mode: 'flags' | 'data';
@@ -65,12 +70,15 @@ const BaseLayer = memo(function BaseLayer({
       ))}
       {world.shapes.map((s) => {
         const c = countries.get(s.code);
-        const fill = mode === 'flags' ? (c ? `url(#pf-${s.code})` : 'var(--map-empty)') : (colorFor(s.code) ?? 'var(--map-empty)');
+        const on = active(s.code);
+        const fill = !on ? 'var(--map-empty)' : mode === 'flags' ? (c ? `url(#pf-${s.code})` : 'var(--map-empty)') : (colorFor(s.code) ?? 'var(--map-empty)');
         return (
           <path
             key={s.code}
             d={s.d}
             fill={fill}
+            opacity={on ? 1 : 0.45}
+            pointerEvents={on ? undefined : 'none'}
             stroke="var(--map-line)"
             strokeWidth={0.6}
             vectorEffect="non-scaling-stroke"
@@ -87,8 +95,9 @@ const BaseLayer = memo(function BaseLayer({
 
 /* ---------- pins for tiny countries (constant size on screen) ---------- */
 const Pins = memo(function Pins({
-  pins, mode, colorFor, onEnter, onSelect,
+  pins, mode, colorFor, active, onEnter, onSelect,
 }: {
+  active: (code: string) => boolean;
   pins: { code: string; x: number; y: number }[];
   mode: 'flags' | 'data';
   colorFor: (code: string) => string | null;
@@ -97,7 +106,7 @@ const Pins = memo(function Pins({
 }) {
   return (
     <>
-      {pins.map((p) => (
+      {pins.filter((p) => active(p.code)).map((p) => (
         <circle
           key={p.code}
           cx={p.x}
@@ -118,7 +127,7 @@ const Pins = memo(function Pins({
   );
 });
 
-export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMap({ world, countries, mode, colorFor, describe, selected, onSelect }, ref) {
+export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMap({ world, countries, mode, colorFor, describe, selected, onSelect, active }, ref) {
   const boxRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -235,13 +244,35 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
         const z = zoomRef.current;
         if (box && z) select(box).transition().duration(350).call(z.scaleBy, f);
       },
+      fitView([[west, south], [east, north]]) {
+        const box = boxRef.current;
+        const z = zoomRef.current;
+        if (!box || !z) return;
+        // project the box edges (sample along them; the projection is not linear in latitude)
+        const pts: [number, number][] = [];
+        for (let i = 0; i <= 8; i++) {
+          const lon = west + ((east - west) * i) / 8;
+          const lat = south + ((north - south) * i) / 8;
+          pts.push([lon, south], [lon, north], [west, lat], [east, lat]);
+        }
+        const xy = pts.map((p) => world.projection(p)).filter((p): p is [number, number] => !!p);
+        const xs = xy.map((p) => p[0]);
+        const ys = xy.map((p) => p[1]);
+        const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+        const { cw, ch, s: px, ox, oy } = fit();
+        const k = Math.max(1, Math.min(MAX_K, 0.94 / Math.max(((x1 - x0) * px) / cw, ((y1 - y0) * px) / (ch * 0.86))));
+        const cx = ox + px * ((x0 + x1) / 2);
+        const cy = oy + px * ((y0 + y1) / 2);
+        const t = zoomIdentity.translate(cw / 2, ch / 2).scale(k).translate(-cx, -cy);
+        select(box).transition().duration(900).call(z.transform, t);
+      },
       reset() {
         const box = boxRef.current;
         const z = zoomRef.current;
         if (box && z) select(box).transition().duration(700).call(z.transform, zoomIdentity);
       },
     }),
-    [shapeBy, pins, fit],
+    [shapeBy, pins, fit, world],
   );
 
   const onEnter = useCallback((code: string | null, e?: React.PointerEvent) => {
@@ -276,10 +307,10 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
             world.shapes.map((s) => {
               const c = countries.get(s.code);
               if (!c) return null;
-              const f = flagFit(s.box);
+              const f = flagFit(s.box, s.center);
               return (
-                <pattern key={s.code} id={`pf-${s.code}`} patternUnits="userSpaceOnUse" x={f.px} y={f.py} width={f.pw} height={f.ph}>
-                  <image href={c.flag} x={f.ix} y={f.iy} width={f.iw} height={f.ih} preserveAspectRatio="none" />
+                <pattern key={s.code} id={`pf-${s.code}`} patternUnits="userSpaceOnUse" x={f.x} y={f.y} width={f.w} height={f.h}>
+                  <image href={c.flag} width={f.w} height={f.h} preserveAspectRatio="none" />
                 </pattern>
               );
             })}
@@ -298,7 +329,7 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
         </defs>
 
         <g ref={gRef}>
-          <BaseLayer world={world} countries={countries} mode={mode} colorFor={colorFor} onEnter={onEnter} onSelect={onPick} />
+          <BaseLayer world={world} countries={countries} mode={mode} colorFor={colorFor} active={active} onEnter={onEnter} onSelect={onPick} />
 
           {/* selected: outlined and lifted */}
           {sel && (
@@ -314,7 +345,7 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
           )}
 
           {/* hover: the country lifts with a shadow */}
-          {hovered && hovered.code !== selected && hovered.area >= TINY && (
+          {hovered && hovered.code !== selected && hovered.area >= TINY && active(hovered.code) && (
             <path
               d={hovered.d}
               fill={mode === 'flags' ? `url(#pf-${hovered.code})` : (colorFor(hovered.code) ?? 'var(--map-empty)')}
@@ -329,7 +360,7 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
             />
           )}
 
-          <Pins pins={pins} mode={mode} colorFor={colorFor} onEnter={onEnter} onSelect={onPick} />
+          <Pins pins={pins} mode={mode} colorFor={colorFor} active={active} onEnter={onEnter} onSelect={onPick} />
         </g>
       </svg>
       </div>

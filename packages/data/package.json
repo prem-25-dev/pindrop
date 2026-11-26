@@ -5,7 +5,8 @@
   "description": "Pinpoint data pipeline: raw sources -> versioned JSON with a source for every value",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build.mjs"
+    "build": "node scripts/build.mjs",
+    "fetch": "node scripts/fetch.mjs"
   },
   "devDependencies": {
     "d3-geo": "3.1.1",

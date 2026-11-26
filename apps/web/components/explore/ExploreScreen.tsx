@@ -7,6 +7,7 @@ import { Segmented } from '@pinpoint/ui';
 import { useCountries } from '@/lib/countries';
 import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { LAYERS, buildScale } from '@/lib/layers';
+import { SCOPES, inScope } from '@/lib/scopes';
 import { openPalette } from '@/components/Palette';
 import { CountryPanel } from './CountryPanel';
 import { ExploreMap, type ExploreMapHandle } from './ExploreMap';
@@ -26,6 +27,7 @@ export function ExploreScreen() {
   const selected = params.get('c')?.toUpperCase() ?? null;
   const mode: Mode = params.get('mode') === 'data' ? 'data' : 'flags';
   const layer = LAYERS.find((l) => l.id === params.get('layer')) ?? LAYERS[0];
+  const scope = SCOPES.find((s) => s.id === params.get('scope')) ?? SCOPES[0];
 
   useEffect(() => {
     setMounted(true);
@@ -58,10 +60,22 @@ export function ExploreScreen() {
 
   const select = useCallback((code: string | null) => setQuery({ c: code }), [setQuery]);
 
+  const active = useCallback((code: string) => inScope(byCode.get(code), scope.id), [byCode, scope.id]);
+
   // fly to the selected country whenever it changes (clicks, neighbours, search, shared links)
   useEffect(() => {
     if (world && selected && byCode.has(selected)) mapRef.current?.flyTo(selected, { panelOpen: true });
   }, [world, selected, byCode]);
+
+  // continent scope: zoom to it; drop a selection that falls outside it
+  useEffect(() => {
+    if (!world || !list) return;
+    if (selected && !inScope(byCode.get(selected), scope.id)) setQuery({ c: null });
+    if (selected && inScope(byCode.get(selected), scope.id)) return; // the selection's fly-in wins
+    if (scope.view) mapRef.current?.fitView(scope.view);
+    else mapRef.current?.reset();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [world, list, scope.id]);
 
   if (!mounted) return null;
 
@@ -70,7 +84,7 @@ export function ExploreScreen() {
       {/* the map */}
       <div className="absolute inset-x-0 bottom-0 top-16">
         {world && list ? (
-          <ExploreMap ref={mapRef} world={world} countries={byCode} mode={mode} colorFor={colorFor} describe={describe} selected={selected} onSelect={select} />
+          <ExploreMap ref={mapRef} world={world} countries={byCode} mode={mode} colorFor={colorFor} describe={describe} selected={selected} onSelect={select} active={active} />
         ) : (
           <div className="flex h-full items-center justify-center">
             <p className="clay rounded-full px-5 py-2.5 text-sm font-extrabold text-[var(--ink-2)]" data-elev="2" role="status">
@@ -96,6 +110,22 @@ export function ExploreScreen() {
           <button onClick={openPalette} className="clay clay-interactive clay-focus rounded-full px-3 py-1.5 text-xs font-extrabold text-[var(--ink-2)]" data-elev="1">
             Find a country
           </button>
+        </div>
+
+        {/* continent scope */}
+        <div className="mt-3 flex flex-wrap gap-1.5" role="radiogroup" aria-label="Show">
+          {SCOPES.map((s) => (
+            <button
+              key={s.id}
+              role="radio"
+              aria-checked={s.id === scope.id}
+              onClick={() => setQuery({ scope: s.id === 'world' ? null : s.id })}
+              className={`clay-focus rounded-full px-2.5 py-1 text-[11px] font-extrabold transition-colors ${s.id === scope.id ? 'clay-tint tint-c3' : 'clay clay-interactive text-[var(--ink-2)]'}`}
+              data-elev="1"
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
 
         <AnimatePresence initial={false}>
