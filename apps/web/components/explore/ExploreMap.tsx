@@ -24,6 +24,25 @@ interface Props {
   onSelect: (code: string | null) => void;
 }
 
+/**
+ * Fit a 4:3 flag to a country's main landmass so the whole flag spans the country.
+ * The flag is stretched to the country's box, but never distorted more than MAX_STRETCH×;
+ * past that (Chile, Norway, Russia…) the extra is trimmed evenly from both sides, keeping the
+ * flag centred. Returns the pattern tile (= country box) and the image rect inside it.
+ */
+const FLAG = 4 / 3;
+const MAX_STRETCH = 2.2;
+function flagFit([[x0, y0], [x1, y1]]: [[number, number], [number, number]]) {
+  const bw = Math.max(x1 - x0, 0.5);
+  const bh = Math.max(y1 - y0, 0.5);
+  const aspect = bw / bh;
+  let iw = bw;
+  let ih = bh;
+  if (aspect / FLAG > MAX_STRETCH) ih = bw / (FLAG * MAX_STRETCH); // very wide: keep width, trim top/bottom
+  else if (FLAG / aspect > MAX_STRETCH) iw = (bh * FLAG) / MAX_STRETCH; // very tall: keep height, trim sides
+  return { px: x0, py: y0, pw: bw, ph: bh, ix: (bw - iw) / 2, iy: (bh - ih) / 2, iw, ih };
+}
+
 /** countries smaller than this (user units², largest landmass) also get a round flag pin */
 const TINY = 1.2;
 const MAX_K = 40;
@@ -100,9 +119,12 @@ const Pins = memo(function Pins({
 });
 
 export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMap({ world, countries, mode, colorFor, describe, selected, onSelect }, ref) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const gRef = useRef<SVGGElement>(null);
-  const zoomRef = useRef<ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const zoomRef = useRef<ZoomBehavior<HTMLDivElement, unknown> | null>(null);
+  const gesturing = useRef(false);
   const [hover, setHover] = useState<{ code: string; x: number; y: number } | null>(null);
   const { w, h } = world;
 
@@ -120,72 +142,110 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
     return out;
   }, [world, countries]);
 
-  // zoom + pan
+  /** how the SVG (viewBox, "meet") sits inside the container: screen px = o + s × user units */
+  const fit = useCallback(() => {
+    const el = boxRef.current!;
+    const cw = el.clientWidth;
+    const ch = el.clientHeight;
+    const s = Math.min(cw / w, ch / h);
+    return { cw, ch, s, ox: (cw - s * w) / 2, oy: (ch - s * h) / 2 };
+  }, [w, h]);
+
+  // zoom + pan. Smoothness: during a gesture we only move an already-painted layer with a CSS transform
+  // (GPU, no repaint of 240 flag-filled shapes). When the gesture ends we commit the transform to the SVG
+  // once, so the map is redrawn crisp a single time.
   useEffect(() => {
+    const box = boxRef.current;
+    const stage = stageRef.current;
     const svg = svgRef.current;
     const g = gRef.current;
-    if (!svg || !g) return;
-    const z = zoom<SVGSVGElement, unknown>()
-      .scaleExtent([1, MAX_K])
-      .translateExtent([[-w * 0.1, -h * 0.15], [w * 1.1, h * 1.15]])
-      .on('zoom', (e) => {
-        g.setAttribute('transform', e.transform.toString());
-        svg.style.setProperty('--k', String(e.transform.k));
-      });
-    select(svg).call(z);
-    zoomRef.current = z;
-    return () => {
-      select(svg).on('.zoom', null);
+    if (!box || !stage || !svg || !g) return;
+    let committed = zoomIdentity;
+
+    const commit = (t: typeof zoomIdentity) => {
+      const { s, ox, oy } = fit();
+      // container-pixel transform → user-unit transform for the <g>
+      g.setAttribute('transform', `translate(${(t.x + t.k * ox - ox) / s},${(t.y + t.k * oy - oy) / s}) scale(${t.k})`);
+      svg.style.setProperty('--k', String(t.k));
+      stage.style.transform = '';
+      committed = t;
     };
-  }, [w, h]);
+
+    const z = zoom<HTMLDivElement, unknown>()
+      .scaleExtent([1, MAX_K])
+      .on('start', () => {
+        gesturing.current = true;
+        setHover(null);
+      })
+      .on('zoom', (e) => {
+        const t = e.transform;
+        const a = t.k / committed.k;
+        stage.style.transform = `translate(${t.x - a * committed.x}px, ${t.y - a * committed.y}px) scale(${a})`;
+      })
+      .on('end', (e) => {
+        gesturing.current = false;
+        commit(e.transform);
+      });
+
+    const setBounds = () => {
+      const { cw, ch } = fit();
+      z.translateExtent([[-cw * 0.15, -ch * 0.25], [cw * 1.15, ch * 1.25]]);
+    };
+    setBounds();
+    select(box).call(z);
+    zoomRef.current = z;
+    window.addEventListener('resize', setBounds);
+    return () => {
+      window.removeEventListener('resize', setBounds);
+      select(box).on('.zoom', null);
+    };
+  }, [fit]);
 
   useImperativeHandle(
     ref,
     () => ({
       flyTo(code, opts) {
-        const svg = svgRef.current;
+        const box = boxRef.current;
         const z = zoomRef.current;
         const s = shapeBy.get(code);
-        if (!svg || !z) return;
+        if (!box || !z) return;
         let [[x0, y0], [x1, y1]] = s ? s.box : [[0, 0], [0, 0]];
         if (!s || s.area < TINY) {
           const pin = pins.find((p) => p.code === code);
           if (!pin) return;
           [x0, y0, x1, y1] = [pin.x - 6, pin.y - 4, pin.x + 6, pin.y + 4];
         }
-        const rect = svg.getBoundingClientRect();
+        const { cw, ch, s: px, ox, oy } = fit();
         // leave room for the panel: a side panel on wide screens, a bottom sheet on phones
-        const wide = rect.width >= 768;
-        const panelW = opts?.panelOpen && wide ? Math.min(420, rect.width * 0.4) : 0;
-        const panelH = opts?.panelOpen && !wide ? rect.height * 0.5 : 0;
-        const usableW = Math.max(200, rect.width - panelW);
-        const usableH = Math.max(160, rect.height - panelH);
-        const scaleToScreen = Math.min(rect.width / w, rect.height / h);
+        const wide = cw >= 768;
+        const panelW = opts?.panelOpen && wide ? Math.min(420, cw * 0.4) : 0;
+        const panelH = opts?.panelOpen && !wide ? ch * 0.5 : 0;
+        const usableW = Math.max(200, cw - panelW);
+        const usableH = Math.max(160, ch - panelH);
         // cap the fly-in so small countries keep their neighbours in view
-        const k = Math.max(1, Math.min(14, 0.7 / Math.max(((x1 - x0) * scaleToScreen) / usableW, ((y1 - y0) * scaleToScreen) / usableH)));
-        const cx = (x0 + x1) / 2;
-        const cy = (y0 + y1) / 2;
-        // centre the country in the space the panel leaves free (screen px → user units)
-        const shiftX = panelW / 2 / scaleToScreen;
-        const shiftY = panelH / 2 / scaleToScreen;
-        const t = zoomIdentity.translate(w / 2 - shiftX, h / 2 - shiftY).scale(k).translate(-cx, -cy);
-        select(svg).transition().duration(900).call(z.transform, t);
+        const k = Math.max(1, Math.min(14, 0.7 / Math.max(((x1 - x0) * px) / usableW, ((y1 - y0) * px) / usableH)));
+        // country centre in container pixels, placed in the middle of the space the panel leaves free
+        const cx = ox + px * ((x0 + x1) / 2);
+        const cy = oy + px * ((y0 + y1) / 2);
+        const t = zoomIdentity.translate((cw - panelW) / 2, (ch - panelH) / 2).scale(k).translate(-cx, -cy);
+        select(box).transition().duration(900).call(z.transform, t);
       },
       zoomBy(f) {
-        const svg = svgRef.current;
+        const box = boxRef.current;
         const z = zoomRef.current;
-        if (svg && z) select(svg).transition().duration(350).call(z.scaleBy, f);
+        if (box && z) select(box).transition().duration(350).call(z.scaleBy, f);
       },
       reset() {
-        const svg = svgRef.current;
+        const box = boxRef.current;
         const z = zoomRef.current;
-        if (svg && z) select(svg).transition().duration(700).call(z.transform, zoomIdentity);
+        if (box && z) select(box).transition().duration(700).call(z.transform, zoomIdentity);
       },
     }),
-    [shapeBy, countries, pins, w, h],
+    [shapeBy, pins, fit],
   );
 
   const onEnter = useCallback((code: string | null, e?: React.PointerEvent) => {
+    if (gesturing.current) return;
     if (!code || !e || e.pointerType === 'touch') return setHover(null);
     setHover({ code, x: e.clientX, y: e.clientY });
   }, []);
@@ -197,14 +257,16 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
 
   return (
     <div
-      className="relative h-full w-full"
-      onPointerMove={(e) => hover && e.pointerType !== 'touch' && setHover((h0) => (h0 ? { ...h0, x: e.clientX, y: e.clientY } : h0))}
+      ref={boxRef}
+      className="relative h-full w-full touch-none overflow-hidden"
+      onPointerMove={(e) => hover && !gesturing.current && e.pointerType !== 'touch' && setHover((h0) => (h0 ? { ...h0, x: e.clientX, y: e.clientY } : h0))}
     >
+      <div ref={stageRef} className="h-full w-full" style={{ transformOrigin: '0 0', willChange: 'transform' }}>
       <svg
         ref={svgRef}
         viewBox={`0 0 ${w} ${h}`}
         preserveAspectRatio="xMidYMid meet"
-        className="h-full w-full touch-none select-none outline-none"
+        className="h-full w-full select-none outline-none"
         role="img"
         aria-label="World map. Use search to find a country by keyboard."
         onClick={(e) => e.target === e.currentTarget && onSelect(null)}
@@ -214,10 +276,10 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
             world.shapes.map((s) => {
               const c = countries.get(s.code);
               if (!c) return null;
-              const [[x0, y0], [x1, y1]] = s.box;
+              const f = flagFit(s.box);
               return (
-                <pattern key={s.code} id={`pf-${s.code}`} patternUnits="userSpaceOnUse" x={x0} y={y0} width={Math.max(x1 - x0, 0.5)} height={Math.max(y1 - y0, 0.5)}>
-                  <image href={c.flag} width={Math.max(x1 - x0, 0.5)} height={Math.max(y1 - y0, 0.5)} preserveAspectRatio="xMidYMid slice" />
+                <pattern key={s.code} id={`pf-${s.code}`} patternUnits="userSpaceOnUse" x={f.px} y={f.py} width={f.pw} height={f.ph}>
+                  <image href={c.flag} x={f.ix} y={f.iy} width={f.iw} height={f.ih} preserveAspectRatio="none" />
                 </pattern>
               );
             })}
@@ -270,6 +332,7 @@ export const ExploreMap = forwardRef<ExploreMapHandle, Props>(function ExploreMa
           <Pins pins={pins} mode={mode} colorFor={colorFor} onEnter={onEnter} onSelect={onPick} />
         </g>
       </svg>
+      </div>
 
       {/* tooltip */}
       {hover && hoverCountry && (
