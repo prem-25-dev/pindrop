@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { AnimatePresence, motion } from 'motion/react';
-import { useTheme } from '@/lib/theme';
+import { PALETTES, useTheme } from '@/lib/theme';
 import { useEffect, useRef, useState } from 'react';
 import { ClayIcon, Segmented } from '@pinpoint/ui';
 import { useSettings } from '@/lib/settings';
@@ -49,7 +49,7 @@ function SearchButton() {
 function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, palette, setPalette } = useTheme();
   const { dockPosition, setDockPosition, setTourDone } = useSettings();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -69,16 +69,20 @@ function SettingsMenu() {
 
   return (
     <div ref={ref} className="relative">
-      <button
+      {/* a free-standing clay gear: no box, it is the button */}
+      <motion.button
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label="Settings"
-        className="clay clay-interactive clay-focus flex h-11 w-11 items-center justify-center rounded-full"
-        data-elev="1"
+        className="clay-focus flex h-11 w-11 items-center justify-center rounded-full"
+        animate={{ rotate: open ? 90 : 0 }}
+        whileHover={{ rotate: open ? 90 : 35, scale: 1.06 }}
+        whileTap={{ scale: 0.88, y: 1 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 16 }}
       >
-        <ClayIcon name="settings" size={30} />
-      </button>
+        <ClayIcon name="settings" bare size={40} />
+      </motion.button>
       <AnimatePresence>
         {open && mounted && (
           <motion.div
@@ -105,6 +109,10 @@ function SettingsMenu() {
                   { value: 'dark', label: 'Dark' },
                 ]}
               />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Palette</p>
+              <Segmented label="Palette" size="sm" value={palette} onChange={setPalette} options={PALETTES.map((p) => ({ value: p.id, label: p.label }))} />
             </div>
             <div className="hidden space-y-2 md:block">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Dock</p>

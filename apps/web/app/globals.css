@@ -25,7 +25,7 @@ body {
 }
 
 ::selection {
-  background: color-mix(in oklab, var(--lilac) 35%, transparent);
+  background: color-mix(in oklab, var(--accent) 28%, transparent);
 }
 
 .text-balance { text-wrap: balance; }

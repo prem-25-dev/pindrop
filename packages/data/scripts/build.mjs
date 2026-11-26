@@ -110,6 +110,22 @@ fs.writeFileSync(path.join(OUT, 'world.topo.json'), JSON.stringify(topo));
 fs.writeFileSync(path.join(OUT, 'sources.json'), JSON.stringify(SOURCES, null, 2));
 fs.writeFileSync(path.join(repo, 'apps/web/public/data/manifest.json'), JSON.stringify({ version: VERSION, built: new Date().toISOString() }));
 
+// ---------- background map: one simplified land outline (Natural Earth 1:110m), no Antarctica ----------
+{
+  const { feature } = await import('topojson-client');
+  const { geoEqualEarth, geoPath } = await import('d3-geo');
+  const landTopo = raw('land-110m.json');
+  const land = feature(landTopo, landTopo.objects.land);
+  const geom = land.features ? land.features[0].geometry : land.geometry;
+  const polys = (geom.type === 'MultiPolygon' ? geom.coordinates : [geom.coordinates])
+    .filter((poly) => poly[0].some(([, lat]) => lat > -60)); // drop Antarctica
+  const W = 1000, H = 470;
+  const shape = { type: 'MultiPolygon', coordinates: polys };
+  const projection = geoEqualEarth().fitExtent([[8, 8], [W - 8, H - 8]], shape);
+  const d = geoPath(projection).digits(1)(shape);
+  fs.writeFileSync(path.join(OUT, 'world-land.json'), JSON.stringify({ w: W, h: H, d, src: 'naturalearth' }));
+}
+
 let copied = 0;
 for (const c of countries) {
   const f = `${c.code.toLowerCase()}.svg`;

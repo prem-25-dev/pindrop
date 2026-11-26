@@ -40,7 +40,7 @@ export function ModeCard({ mode, featured = false, index = 0 }: { mode: Mode; fe
               {KIND_LABEL[mode.kind]}
             </span>
             {soon && (
-              <span className="rounded-full bg-[color-mix(in_oklab,var(--lilac)_18%,transparent)] px-2.5 py-1 text-[11px] font-extrabold text-[var(--lilac-deep)] dark:text-[var(--lilac)]">
+              <span className="pill-accent rounded-full px-2.5 py-1 text-[11px] font-extrabold ">
                 {mode.milestone}
               </span>
             )}

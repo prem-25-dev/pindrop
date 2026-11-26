@@ -1,85 +1,194 @@
 /* ============================================================
    Pinpoint clay design system
    macOS layout + claymorphism surfaces.
-   Light = warm cream clay, Dark = charcoal-indigo clay.
+
+   Three palettes (data-palette on <html>), each with light + dark (.dark on <html>):
+     mono  — cool grey clay, cobalt accent          (default)
+     atlas — warm paper clay, vermilion + teal      (old-map feel)
+     terra — sand & terracotta clay, sage + ochre   (earthy)
+
+   Components only use the semantic roles below, never raw colours:
+     --accent  primary action (play, pins)      --c2  secondary / highlight
+     --c3      info / links                     --c4  correct / success
+     --warn    rewards, XP                      --bad wrong answers
+     --neutral quiet icons (settings, shapes)
    ============================================================ */
 
 :root {
-  /* palette */
-  --peach: #ff8a5b;
-  --peach-deep: #f2673a;
-  --lilac: #9b87f5;
-  --lilac-deep: #7a63e8;
-  --sky: #6ec1ff;
-  --sky-deep: #3d9bf0;
-  --mint: #5fd3a6;
-  --mint-deep: #2fb886;
-  --sun: #ffc94d;
-  --rose: #ff7a9a;
-
-  /* light clay */
-  --bg: #f3ece4;
-  --bg-2: #efe6dc;
-  --surface: #fbf6f0;
-  --surface-2: #f6efe7;
-  --ink: #2b2433;
-  --ink-2: #6b6275;
-  --ink-3: #9a91a3;
-  --line: rgba(80, 60, 50, 0.08);
-  --clay-hi: rgba(255, 255, 255, 0.95);
-  --clay-lo: rgba(170, 140, 118, 0.3);
-  --clay-drop: rgba(122, 88, 64, 0.28);
-  --clay-drop-2: rgba(122, 88, 64, 0.12);
-  --frost: rgba(251, 246, 240, 0.72);
-  --focus: var(--lilac);
-  --on-accent: #ffffff;
-
   --radius-xs: 12px;
   --radius-sm: 16px;
   --radius: 24px;
   --radius-lg: 32px;
   --radius-xl: 40px;
-
   --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
-
-  color-scheme: light;
+  --on-accent: #ffffff;
 }
 
-.dark {
-  --bg: #1b1a26;
-  --bg-2: #201f2e;
-  --surface: #2a2940;
-  --surface-2: #242338;
-  --ink: #f3eefb;
-  --ink-2: #b8b1c8;
-  --ink-3: #847d96;
+/* ---------- MONO (default) ---------- */
+:root,
+[data-palette="mono"] {
+  --bg: #e3e5e9;
+  --bg-2: #dcdfe4;
+  --surface: #eef0f3;
+  --surface-2: #e6e8ec;
+  --ink: #15171c;
+  --ink-2: #545a66;
+  --ink-3: #868c97;
+  --line: rgba(20, 30, 50, 0.08);
+  --clay-hi: rgba(255, 255, 255, 0.92);
+  --clay-lo: rgba(128, 138, 160, 0.34);
+  --clay-drop: rgba(70, 80, 105, 0.26);
+  --clay-drop-2: rgba(70, 80, 105, 0.12);
+  --frost: rgba(238, 240, 243, 0.74);
+
+  --accent: #2f5bff;  --accent-deep: #1d3fd0;
+  --c2: #ff6a3d;      --c2-deep: #db4c1f;
+  --c3: #8a6cf5;      --c3-deep: #6a4bdc;
+  --c4: #1fae7a;      --c4-deep: #15875d;
+  --warn: #f2a516;    --warn-deep: #c98207;
+  --bad: #ef4a5f;
+  --neutral: #8f95a3; --neutral-deep: #5f6573;
+  color-scheme: light;
+}
+:root.dark,
+.dark[data-palette="mono"],
+.dark [data-palette="mono"] {
+  --bg: #111214;
+  --bg-2: #141518;
+  --surface: #1e2023;
+  --surface-2: #191b1e;
+  --ink: #f0f1f3;
+  --ink-2: #a7abb3;
+  --ink-3: #6f747d;
   --line: rgba(255, 255, 255, 0.06);
-  --clay-hi: rgba(255, 255, 255, 0.09);
-  --clay-lo: rgba(0, 0, 0, 0.42);
-  --clay-drop: rgba(0, 0, 0, 0.55);
-  --clay-drop-2: rgba(0, 0, 0, 0.3);
-  --frost: rgba(36, 35, 56, 0.72);
+  --clay-hi: rgba(255, 255, 255, 0.055);
+  --clay-lo: rgba(0, 0, 0, 0.55);
+  --clay-drop: rgba(0, 0, 0, 0.6);
+  --clay-drop-2: rgba(0, 0, 0, 0.35);
+  --frost: rgba(24, 25, 28, 0.74);
+
+  --accent: #5b7cff;  --accent-deep: #3a5cf0;
+  --c2: #ff7a4d;      --c2-deep: #e35a2b;
+  --c3: #9c84ff;      --c3-deep: #7c62f0;
+  --c4: #30c48e;      --c4-deep: #1fa070;
+  --warn: #f5b335;    --warn-deep: #d9930f;
+  --bad: #ff5c70;
+  --neutral: #6c717b; --neutral-deep: #474b53;
   color-scheme: dark;
 }
 
-/* ---------- wallpaper: static smooth gradient ---------- */
+/* ---------- ATLAS ---------- */
+[data-palette="atlas"] {
+  --bg: #ece7df;
+  --bg-2: #e5dfd5;
+  --surface: #f6f2ec;
+  --surface-2: #efe9e1;
+  --ink: #1e2430;
+  --ink-2: #5a606c;
+  --ink-3: #8d9099;
+  --line: rgba(60, 50, 35, 0.08);
+  --clay-hi: rgba(255, 255, 255, 0.92);
+  --clay-lo: rgba(150, 130, 100, 0.3);
+  --clay-drop: rgba(95, 78, 55, 0.24);
+  --clay-drop-2: rgba(95, 78, 55, 0.11);
+  --frost: rgba(246, 242, 236, 0.74);
+
+  --accent: #e0473f;  --accent-deep: #bb3129;
+  --c2: #187a8a;      --c2-deep: #0f5e6b;
+  --c3: #3c6ad3;      --c3-deep: #2a51ad;
+  --c4: #2f9a62;      --c4-deep: #21784a;
+  --warn: #e2a21c;    --warn-deep: #b97f0c;
+  --bad: #d9364b;
+  --neutral: #9a9286; --neutral-deep: #6b6459;
+  color-scheme: light;
+}
+.dark[data-palette="atlas"],
+.dark [data-palette="atlas"] {
+  --bg: #151413;
+  --bg-2: #191816;
+  --surface: #242220;
+  --surface-2: #1e1c1a;
+  --ink: #f2eee8;
+  --ink-2: #b3ada4;
+  --ink-3: #7d7870;
+  --line: rgba(255, 245, 230, 0.06);
+  --clay-hi: rgba(255, 245, 230, 0.055);
+  --clay-lo: rgba(0, 0, 0, 0.55);
+  --clay-drop: rgba(0, 0, 0, 0.6);
+  --clay-drop-2: rgba(0, 0, 0, 0.35);
+  --frost: rgba(30, 28, 26, 0.74);
+
+  --accent: #ff5d52;  --accent-deep: #e23f35;
+  --c2: #2aa5b8;      --c2-deep: #188597;
+  --c3: #6b93f0;      --c3-deep: #4a74d8;
+  --c4: #42bd7f;      --c4-deep: #2b9a62;
+  --warn: #f0b43a;    --warn-deep: #d0940f;
+  --bad: #ff5a6b;
+  --neutral: #7a746b; --neutral-deep: #534e47;
+  color-scheme: dark;
+}
+
+/* ---------- TERRA ---------- */
+[data-palette="terra"] {
+  --bg: #ebe1d3;
+  --bg-2: #e4d8c8;
+  --surface: #f5eee4;
+  --surface-2: #eee4d7;
+  --ink: #2a211b;
+  --ink-2: #6c5f55;
+  --ink-3: #9b8e83;
+  --line: rgba(80, 50, 30, 0.08);
+  --clay-hi: rgba(255, 252, 246, 0.92);
+  --clay-lo: rgba(160, 125, 95, 0.32);
+  --clay-drop: rgba(110, 75, 50, 0.26);
+  --clay-drop-2: rgba(110, 75, 50, 0.12);
+  --frost: rgba(245, 238, 228, 0.74);
+
+  --accent: #c8633a;  --accent-deep: #a44c27;
+  --c2: #6d8f5c;      --c2-deep: #537345;
+  --c3: #457cae;      --c3-deep: #33618c;
+  --c4: #4f9a6e;      --c4-deep: #3a7a54;
+  --warn: #d8a13d;    --warn-deep: #b38227;
+  --bad: #c9473f;
+  --neutral: #a08f80; --neutral-deep: #72645a;
+  color-scheme: light;
+}
+.dark[data-palette="terra"],
+.dark [data-palette="terra"] {
+  --bg: #19140f;
+  --bg-2: #1d1712;
+  --surface: #29211b;
+  --surface-2: #221b16;
+  --ink: #f3eae0;
+  --ink-2: #bdae9f;
+  --ink-3: #887a6d;
+  --line: rgba(255, 235, 215, 0.06);
+  --clay-hi: rgba(255, 235, 215, 0.055);
+  --clay-lo: rgba(0, 0, 0, 0.55);
+  --clay-drop: rgba(0, 0, 0, 0.6);
+  --clay-drop-2: rgba(0, 0, 0, 0.35);
+  --frost: rgba(34, 27, 22, 0.74);
+
+  --accent: #e07a4e;  --accent-deep: #c45e33;
+  --c2: #8db07b;      --c2-deep: #6e915d;
+  --c3: #6fa0d0;      --c3-deep: #4f82b4;
+  --c4: #5fbb86;      --c4-deep: #449b6a;
+  --warn: #e8b759;    --warn-deep: #c9963a;
+  --bad: #ec6458;
+  --neutral: #85766a; --neutral-deep: #5c5047;
+  color-scheme: dark;
+}
+
+:root { --focus: var(--accent); }
+
+/* ---------- wallpaper: calm, single-hue, no colour blobs ---------- */
 .clay-wallpaper {
   position: fixed;
   inset: 0;
   z-index: -1;
   background:
-    radial-gradient(60% 50% at 12% 8%, color-mix(in oklab, var(--peach) 26%, transparent) 0%, transparent 70%),
-    radial-gradient(55% 45% at 92% 14%, color-mix(in oklab, var(--lilac) 26%, transparent) 0%, transparent 70%),
-    radial-gradient(60% 55% at 78% 96%, color-mix(in oklab, var(--sky) 22%, transparent) 0%, transparent 70%),
-    radial-gradient(50% 45% at 6% 92%, color-mix(in oklab, var(--mint) 16%, transparent) 0%, transparent 70%),
-    linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
-}
-.dark .clay-wallpaper {
-  background:
-    radial-gradient(60% 50% at 12% 8%, color-mix(in oklab, var(--peach) 14%, transparent) 0%, transparent 70%),
-    radial-gradient(55% 45% at 92% 14%, color-mix(in oklab, var(--lilac) 20%, transparent) 0%, transparent 70%),
-    radial-gradient(60% 55% at 78% 96%, color-mix(in oklab, var(--sky) 12%, transparent) 0%, transparent 70%),
+    radial-gradient(120% 70% at 50% -10%, color-mix(in oklab, var(--surface) 70%, transparent) 0%, transparent 60%),
     linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%);
 }
 
@@ -111,12 +220,11 @@
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(240px circle at var(--mx, 30%) var(--my, 20%), rgba(255, 255, 255, 0.35), transparent 60%);
+  background: radial-gradient(260px circle at var(--mx, 30%) var(--my, 20%), var(--clay-hi), transparent 65%);
   opacity: 0;
   transition: opacity 0.4s var(--ease);
-  mix-blend-mode: soft-light;
 }
-.clay[data-light]:hover::after { opacity: 1; }
+.clay[data-light]:hover::after { opacity: 0.55; }
 
 .clay-interactive { cursor: pointer; }
 .clay-interactive:hover { transform: translateY(-4px); --elev-y: 28px; --elev-blur: 56px; }
@@ -138,28 +246,32 @@
     inset -4px -4px 10px var(--clay-hi);
 }
 
-/* tinted clay (colored surfaces) */
+/* tinted clay (coloured surfaces) */
 .clay-tint {
-  --tint: var(--peach);
-  --tint-deep: var(--peach-deep);
-  background: linear-gradient(145deg, color-mix(in oklab, var(--tint) 88%, white) 0%, var(--tint-deep) 100%);
+  --tint: var(--accent);
+  --tint-deep: var(--accent-deep);
+  background: linear-gradient(145deg, color-mix(in oklab, var(--tint) 82%, white) 0%, var(--tint) 55%, var(--tint-deep) 100%);
   color: var(--on-accent);
   box-shadow:
-    inset 5px 5px 10px rgba(255, 255, 255, 0.45),
-    inset -6px -6px 12px rgba(0, 0, 0, 0.16),
-    0 14px 28px -12px color-mix(in oklab, var(--tint-deep) 70%, transparent),
+    inset 4px 4px 9px rgba(255, 255, 255, 0.35),
+    inset -5px -5px 11px rgba(0, 0, 0, 0.18),
+    0 14px 26px -12px color-mix(in oklab, var(--tint-deep) 75%, transparent),
     0 2px 6px var(--clay-drop-2);
 }
-.tint-peach { --tint: var(--peach); --tint-deep: var(--peach-deep); }
-.tint-lilac { --tint: var(--lilac); --tint-deep: var(--lilac-deep); }
-.tint-sky { --tint: var(--sky); --tint-deep: var(--sky-deep); }
-.tint-mint { --tint: var(--mint); --tint-deep: var(--mint-deep); }
+.tint-accent { --tint: var(--accent); --tint-deep: var(--accent-deep); }
+.tint-c2 { --tint: var(--c2); --tint-deep: var(--c2-deep); }
+.tint-c3 { --tint: var(--c3); --tint-deep: var(--c3-deep); }
+.tint-c4 { --tint: var(--c4); --tint-deep: var(--c4-deep); }
+
+/* small labels / pills tinted by a role */
+.pill-accent { background: color-mix(in oklab, var(--accent) 14%, transparent); color: var(--accent-deep); }
+.dark .pill-accent { color: var(--accent); }
 
 /* frosted overlay (palette, sheets backdrop) — the only place glass is used */
 .frost {
   background: var(--frost);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  backdrop-filter: blur(22px) saturate(140%);
+  -webkit-backdrop-filter: blur(22px) saturate(140%);
 }
 
 /* focus ring: visible for keyboard only */

@@ -7,6 +7,7 @@ import { useSettings } from '@/lib/settings';
 import { Header } from './Header';
 import { Palette } from './Palette';
 import { Tour } from './Tour';
+import { WorldBackdrop } from './WorldBackdrop';
 
 const DOCK: DockItem[] = [
   { id: 'home', label: 'Home', href: '/', icon: <ClayIcon name="home" /> },
@@ -48,6 +49,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <div className="clay-wallpaper" aria-hidden />
+      <WorldBackdrop />
       <a href="#main" className="clay sr-only z-50 px-4 py-2 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>

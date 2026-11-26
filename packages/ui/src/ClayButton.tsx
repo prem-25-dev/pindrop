@@ -2,7 +2,7 @@
 import { motion, type HTMLMotionProps } from 'motion/react';
 import { forwardRef } from 'react';
 
-type Variant = 'primary' | 'lilac' | 'sky' | 'mint' | 'soft' | 'ghost';
+type Variant = 'primary' | 'secondary' | 'info' | 'success' | 'soft' | 'ghost';
 type Size = 'sm' | 'md' | 'lg';
 
 export interface ClayButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
@@ -13,10 +13,10 @@ export interface ClayButtonProps extends Omit<HTMLMotionProps<'button'>, 'childr
 }
 
 const tint: Record<Variant, string> = {
-  primary: 'clay-tint tint-peach',
-  lilac: 'clay-tint tint-lilac',
-  sky: 'clay-tint tint-sky',
-  mint: 'clay-tint tint-mint',
+  primary: 'clay-tint tint-accent',
+  secondary: 'clay-tint tint-c2',
+  info: 'clay-tint tint-c3',
+  success: 'clay-tint tint-c4',
   soft: 'clay',
   ghost: '',
 };

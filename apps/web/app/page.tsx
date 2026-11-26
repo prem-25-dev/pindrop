@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <div className="space-y-10">
       <section className="pt-4">
-        <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[var(--peach-deep)]">Where in the world?</p>
+        <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[var(--accent)]">Where in the world?</p>
         <h1 className="mt-2 max-w-2xl text-balance text-4xl font-black leading-[1.05] tracking-tight sm:text-6xl">
           The whole world, one flag at a time.
         </h1>

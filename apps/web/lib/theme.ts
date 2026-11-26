@@ -2,51 +2,75 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export type ThemePref = 'system' | 'light' | 'dark';
-const KEY = 'pinpoint-theme';
+export type PaletteId = 'mono' | 'atlas' | 'terra';
 
-/** Runs in <head> before paint so there is no flash of the wrong theme. Keep in sync with applyTheme(). */
-export const THEME_INIT_SCRIPT = `(function(){try{var p=localStorage.getItem('${KEY}')||'system';var m=window.matchMedia('(prefers-color-scheme: dark)');var d=p==='dark'||(p==='system'&&m.matches);document.documentElement.classList.toggle('dark',d);}catch(e){if(window.matchMedia('(prefers-color-scheme: dark)').matches)document.documentElement.classList.add('dark');}})();`;
+export const PALETTES: { id: PaletteId; label: string; note: string }[] = [
+  { id: 'mono', label: 'Mono', note: 'Cool grey clay, cobalt accent' },
+  { id: 'atlas', label: 'Atlas', note: 'Warm paper clay, vermilion and teal' },
+  { id: 'terra', label: 'Terra', note: 'Sand and terracotta clay, sage and ochre' },
+];
 
-function readPref(): ThemePref {
+const THEME_KEY = 'pinpoint-theme';
+const PALETTE_KEY = 'pinpoint-palette';
+const DEFAULT_PALETTE: PaletteId = 'mono';
+
+/** Runs in <head> before paint so there is no flash of the wrong theme or palette. */
+export const THEME_INIT_SCRIPT = `(function(){var d=document.documentElement;var p='system',c='${DEFAULT_PALETTE}';try{p=localStorage.getItem('${THEME_KEY}')||'system';c=localStorage.getItem('${PALETTE_KEY}')||'${DEFAULT_PALETTE}';}catch(e){}var dark=p==='dark'||(p==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);d.classList.toggle('dark',dark);d.setAttribute('data-palette',c);})();`;
+
+const read = <T extends string>(key: string, allowed: readonly T[], fallback: T): T => {
   try {
-    const v = localStorage.getItem(KEY);
-    return v === 'light' || v === 'dark' ? v : 'system';
+    const v = localStorage.getItem(key) as T | null;
+    return v && allowed.includes(v) ? v : fallback;
   } catch {
-    return 'system';
+    return fallback;
   }
-}
+};
+const write = (key: string, v: string) => {
+  try {
+    localStorage.setItem(key, v);
+  } catch {
+    /* storage blocked: still applies for this visit */
+  }
+};
 
 function applyTheme(pref: ThemePref) {
   const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
   document.documentElement.classList.toggle('dark', dark);
 }
 
-const listeners = new Set<(p: ThemePref) => void>();
+type State = { theme: ThemePref; palette: PaletteId };
+const listeners = new Set<(s: Partial<State>) => void>();
 
 export function useTheme() {
-  const [theme, setThemeState] = useState<ThemePref>('system');
+  const [state, setState] = useState<State>({ theme: 'system', palette: DEFAULT_PALETTE });
 
   useEffect(() => {
-    setThemeState(readPref());
+    setState({
+      theme: read<ThemePref>(THEME_KEY, ['system', 'light', 'dark'], 'system'),
+      palette: read<PaletteId>(PALETTE_KEY, ['mono', 'atlas', 'terra'], DEFAULT_PALETTE),
+    });
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    const onSystem = () => readPref() === 'system' && applyTheme('system');
+    const onSystem = () => read(THEME_KEY, ['system', 'light', 'dark'] as const, 'system') === 'system' && applyTheme('system');
     mq.addEventListener('change', onSystem);
-    listeners.add(setThemeState);
+    const l = (s: Partial<State>) => setState((prev) => ({ ...prev, ...s }));
+    listeners.add(l);
     return () => {
       mq.removeEventListener('change', onSystem);
-      listeners.delete(setThemeState);
+      listeners.delete(l);
     };
   }, []);
 
-  const setTheme = useCallback((p: ThemePref) => {
-    try {
-      localStorage.setItem(KEY, p);
-    } catch {
-      /* storage blocked: still apply for this visit */
-    }
-    applyTheme(p);
-    listeners.forEach((l) => l(p));
+  const setTheme = useCallback((theme: ThemePref) => {
+    write(THEME_KEY, theme);
+    applyTheme(theme);
+    listeners.forEach((l) => l({ theme }));
   }, []);
 
-  return { theme, setTheme };
+  const setPalette = useCallback((palette: PaletteId) => {
+    write(PALETTE_KEY, palette);
+    document.documentElement.setAttribute('data-palette', palette);
+    listeners.forEach((l) => l({ palette }));
+  }, []);
+
+  return { ...state, setTheme, setPalette };
 }

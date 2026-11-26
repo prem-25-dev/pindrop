@@ -67,7 +67,7 @@ export function Tour() {
             </AnimatePresence>
             <div className="mt-6 flex justify-center gap-2" aria-hidden>
               {STEPS.map((_, i) => (
-                <span key={i} className={`h-2 rounded-full transition-all ${i === step ? 'w-6 bg-[var(--peach)]' : 'w-2 bg-[var(--ink-3)] opacity-40'}`} />
+                <span key={i} className={`h-2 rounded-full transition-all ${i === step ? 'w-6 bg-[var(--accent)]' : 'w-2 bg-[var(--ink-3)] opacity-40'}`} />
               ))}
             </div>
             <div className="mt-6 flex items-center justify-between gap-3">

@@ -2,14 +2,15 @@
 import { useState } from 'react';
 import { ClayButton, ClayIcon, ClaySurface, Segmented, clayIconNames } from '@pinpoint/ui';
 import { DIFFICULTIES } from '@/lib/modes';
+import { PALETTES, useTheme } from '@/lib/theme';
 
 const SWATCHES = [
-  ['Peach', '--peach', 'Primary action, pins'],
-  ['Lilac', '--lilac', 'Focus, highlights'],
-  ['Sky', '--sky', 'Info, links'],
-  ['Mint', '--mint', 'Correct, success'],
-  ['Sun', '--sun', 'Rewards, XP'],
-  ['Rose', '--rose', 'Wrong answers'],
+  ['Accent', '--accent', '--accent-deep', 'Play, pins, main action'],
+  ['Secondary', '--c2', '--c2-deep', 'Highlights'],
+  ['Info', '--c3', '--c3-deep', 'Links, info'],
+  ['Success', '--c4', '--c4-deep', 'Correct answers'],
+  ['Reward', '--warn', '--warn-deep', 'XP, trophies'],
+  ['Neutral', '--neutral', '--neutral-deep', 'Quiet icons'],
 ] as const;
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -24,21 +25,46 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function StyleGuide() {
   const [diff, setDiff] = useState<string>('navigator');
   const [mode, setMode] = useState<'flags' | 'data'>('flags');
+  const { palette, setPalette } = useTheme();
   return (
     <div className="space-y-12">
       <header className="pt-4">
-        <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[var(--peach-deep)]">Design system</p>
+        <p className="text-sm font-extrabold uppercase tracking-[0.18em] text-[var(--accent)]">Design system</p>
         <h1 className="mt-2 text-4xl font-black tracking-tight sm:text-5xl">Mac layout, made of clay</h1>
         <p className="mt-3 max-w-2xl font-semibold text-[var(--ink-2)]">
           Every surface in Pinpoint is soft clay: two inner shadows and a gentle drop shadow. Frosted glass appears only on overlays. Switch the theme in Settings to see dark clay.
         </p>
       </header>
 
-      <Section title="Colour">
+      <Section title="Palette">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {PALETTES.map((p) => (
+            <button
+              key={p.id}
+              data-palette={p.id}
+              onClick={() => setPalette(p.id)}
+              aria-pressed={palette === p.id}
+              className={`clay clay-interactive clay-focus p-4 text-left ${palette === p.id ? 'outline outline-3 outline-offset-4 outline-[var(--ink-3)]' : ''}`}
+              data-elev="1"
+              style={{ background: 'linear-gradient(145deg, var(--surface), var(--surface-2))', color: 'var(--ink)' }}
+            >
+              <div className="flex gap-1.5">
+                {['--accent', '--c2', '--c3', '--c4', '--warn'].map((v) => (
+                  <span key={v} className="h-8 flex-1 rounded-xl" style={{ background: `var(${v})` }} />
+                ))}
+              </div>
+              <p className="mt-3 font-black">{p.label}</p>
+              <p className="text-xs font-semibold" style={{ color: 'var(--ink-3)' }}>{p.note}</p>
+            </button>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Colour roles">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {SWATCHES.map(([name, v, use]) => (
+          {SWATCHES.map(([name, v, deep, use]) => (
             <ClaySurface key={name} elev={1} className="p-3">
-              <div className="clay-tint h-16 rounded-2xl" style={{ ['--tint' as string]: `var(${v})`, ['--tint-deep' as string]: `color-mix(in oklab, var(${v}) 80%, black)` }} />
+              <div className="clay-tint h-16 rounded-2xl" style={{ ['--tint' as string]: `var(${v})`, ['--tint-deep' as string]: `var(${deep})` }} />
               <p className="mt-3 font-extrabold">{name}</p>
               <p className="text-xs font-semibold text-[var(--ink-3)]">{use}</p>
             </ClaySurface>
@@ -69,9 +95,9 @@ export default function StyleGuide() {
       <Section title="Buttons">
         <div className="flex flex-wrap items-center gap-4">
           <ClayButton size="lg">Play now</ClayButton>
-          <ClayButton variant="lilac">Create room</ClayButton>
-          <ClayButton variant="sky">Explore</ClayButton>
-          <ClayButton variant="mint">Correct!</ClayButton>
+          <ClayButton variant="secondary">Create room</ClayButton>
+          <ClayButton variant="info">Explore</ClayButton>
+          <ClayButton variant="success">Correct!</ClayButton>
           <ClayButton variant="soft">Settings</ClayButton>
           <ClayButton variant="ghost">Skip</ClayButton>
           <ClayButton size="sm">Small</ClayButton>
