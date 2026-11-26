@@ -19,7 +19,13 @@ export interface CountryIndexItem {
   landlocked: boolean;
   /** land neighbours, ISO alpha-2 */
   borders: string[];
-  links: { wikipedia: string; worldbank: string | null };
+  links: { wikipedia: string; worldbank: string | null; gov?: string; wikidata?: string };
+  income: 'low' | 'lower-middle' | 'upper-middle' | 'high' | null;
+  ldc: boolean;
+  lldc: boolean;
+  sids: boolean;
+  groups: string[];
+  drivingSide: 'left' | 'right' | null;
   latlng: [number, number];
   hasShape: boolean;
   /** 4:3 flag, for map fills and uniform boxes */
