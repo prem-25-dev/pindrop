@@ -26,6 +26,8 @@ export interface CountryIndexItem {
   sids: boolean;
   groups: string[];
   drivingSide: 'left' | 'right' | null;
+  /** coastline length from the World Factbook archive */
+  coastline: { km: number | null; landlocked: boolean; text: string; src: string } | null;
   latlng: [number, number];
   hasShape: boolean;
   /** 4:3 flag, for map fills and uniform boxes */

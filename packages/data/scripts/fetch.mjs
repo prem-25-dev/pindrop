@@ -95,8 +95,56 @@ async function wikidata() {
   write('wikidata/countries.json', { source: 'Wikidata', url: 'https://www.wikidata.org/', license: 'CC0', retrieved: today, countries: out });
 }
 
+/* ---------- CIA World Factbook (archived; via the CC0 factbook.json mirror): coastline length ---------- */
+async function factbook() {
+  console.log('World Factbook coastlines…');
+  const tree = await getJSON('https://api.github.com/repos/factbook/factbook.json/git/trees/master?recursive=1');
+  const files = tree.tree
+    .map((t) => t.path)
+    .filter((p) => /^[a-z-]+\/[a-z]{2}\.json$/.test(p) && !/^(oceans|world|antarctica|meta)\//.test(p));
+  const out = {};
+  for (const file of files) {
+    let j;
+    try {
+      j = await getJSON(`https://raw.githubusercontent.com/factbook/factbook.json/master/${file}`);
+    } catch {
+      continue;
+    }
+    const tld = j?.Communications?.['Internet country code']?.text?.match(/\.[a-z]{2}\b/)?.[0];
+    const text = j?.Geography?.Coastline?.text;
+    if (!tld || !text) continue;
+    const plain = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const m = plain.match(/([\d,.]+)\s*km/);
+    const rec = {
+      km: m ? Number(m[1].replace(/,/g, '')) : null,
+      landlocked: /landlocked/i.test(plain) || (m ? Number(m[1].replace(/,/g, '')) === 0 : false),
+      text: plain.length > 140 ? `${plain.slice(0, 137)}…` : plain,
+      gec: file.split('/')[1].replace('.json', ''),
+      name: j?.Government?.['Country name']?.['conventional short form']?.text ?? null,
+    };
+    const prev = out[tld];
+    // several profiles can share a domain (West Bank + Gaza Strip = .ps): combine them
+    out[tld] = !prev
+      ? rec
+      : {
+          km: (prev.km ?? 0) + (rec.km ?? 0),
+          landlocked: prev.landlocked && rec.landlocked,
+          text: [prev, rec].map((r) => `${r.name ?? r.gec}: ${r.text}`).join('; '),
+          gec: `${prev.gec}+${rec.gec}`,
+          name: null,
+        };
+  }
+  write('factbook/coastline.json', {
+    source: 'CIA World Factbook (archived 2026), via factbook.json',
+    url: 'https://github.com/factbook/factbook.json',
+    license: 'Public domain (CC0)',
+    retrieved: today,
+    byTld: out,
+  });
+}
+
 const only = process.argv.slice(2);
-const steps = { worldbank: worldBank, undp, wikidata };
+const steps = { worldbank: worldBank, undp, wikidata, factbook };
 for (const [name, fn] of Object.entries(steps)) {
   if (only.length && !only.includes(name)) continue;
   await fn();

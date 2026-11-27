@@ -1,6 +1,6 @@
 'use client';
-import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useState, type ReactNode } from 'react';
+import { AnimatePresence, motion, useScroll, useTransform } from 'motion/react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Segmented } from '@pinpoint/ui';
 import type { CountryIndexItem } from '@/lib/countries';
 import { LAYERS, loadCategories, loadLatest, useLoaded, type NumLayer } from '@/lib/layers';
@@ -16,6 +16,7 @@ const SOURCES = [
   { name: 'UNDP Human Development Report 2025', what: 'Human Development Index', license: 'CC BY 3.0 IGO', url: 'https://hdr.undp.org/data-center' },
   { name: 'UN Statistics Division (M49)', what: 'Least developed countries list', license: 'UN terms of use', url: 'https://unstats.un.org/unsd/methodology/m49/overview/' },
   { name: 'Wikidata', what: 'Official websites, driving side', license: 'CC0', url: 'https://www.wikidata.org/' },
+  { name: 'CIA World Factbook (archived 2026)', what: 'Coastline length, via the factbook.json mirror', license: 'Public domain', url: 'https://github.com/factbook/factbook.json' },
   { name: 'Official member lists', what: 'EU, NATO, G20, BRICS, ASEAN, OPEC, Commonwealth, African Union, Arab League (as of 2025)', license: 'Facts', url: 'https://github.com/prem-25-dev/pindrop/blob/main/packages/data/scripts/layers.mjs' },
   { name: 'mledoze/countries', what: 'Names, capitals, area, languages, currencies, neighbours', license: 'ODbL', url: 'https://github.com/mledoze/countries' },
   { name: 'Natural Earth', what: 'Country borders (1:50m)', license: 'Public domain', url: 'https://www.naturalearthdata.com/' },
@@ -78,28 +79,7 @@ export function CountryPanel({
           data-elev="4"
           style={{ borderRadius: 'var(--radius-lg)' }}
         >
-          <div className="overflow-y-auto overscroll-contain p-5">
-            {/* header */}
-            <div className="flex items-start gap-4">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={c.flag}
-                alt={`Flag of ${c.name}`}
-                width={96}
-                height={72}
-                className="h-[72px] w-24 shrink-0 rounded-xl"
-                style={{ boxShadow: '0 12px 22px -12px var(--clay-drop), 0 2px 6px var(--clay-drop-2)' }}
-              />
-              <div className="min-w-0 flex-1">
-                <h2 className="text-2xl font-black leading-tight tracking-tight">{c.name}</h2>
-                <p className="mt-0.5 text-xs font-bold text-[var(--ink-3)]">{c.official}</p>
-                <p className="mt-1.5 text-xs font-extrabold text-[var(--accent)]">{c.subregion || c.region}</p>
-              </div>
-              <button onClick={onClose} aria-label="Close" className="clay clay-interactive clay-focus flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-black text-[var(--ink-2)]" data-elev="1">
-                ×
-              </button>
-            </div>
-
+          <PanelScroll c={c} onClose={onClose}>
             <div className="mt-4">
               <Segmented
                 label="Panel section"
@@ -128,7 +108,16 @@ export function CountryPanel({
                   </Row>
                   <Row label="Languages">{c.languages.join(', ') || '—'}</Row>
                   <Row label="Currency">{c.currency ? `${c.currency.name}${c.currency.symbol ? ` (${c.currency.symbol})` : ''}` : '—'}</Row>
-                  <Row label="Coast">{c.landlocked ? 'Landlocked' : 'Has a coastline'}</Row>
+                  <Row label="Coastline" source={c.coastline ? { label: 'World Factbook', url: 'https://github.com/factbook/factbook.json' } : undefined}>
+                    {c.coastline
+                      ? c.coastline.landlocked && !c.coastline.km
+                        ? 'Landlocked'
+                        : `${whole.format(c.coastline.km ?? 0)} km`
+                      : c.landlocked
+                        ? 'Landlocked'
+                        : 'Has a coastline'}
+                    {c.coastline && c.coastline.text.includes(';') && <span className="block text-[11px] font-semibold text-[var(--ink-3)]">{c.coastline.text}</span>}
+                  </Row>
                   <Row label="Driving" source={c.drivingSide ? { label: 'Wikidata', url: c.links.wikidata ?? 'https://www.wikidata.org/wiki/Property:P1622' } : undefined}>
                     {c.drivingSide ? (c.drivingSide === 'left' ? 'On the left' : 'On the right') : '—'}
                   </Row>
@@ -223,9 +212,68 @@ export function CountryPanel({
                 </li>
               </ul>
             )}
-          </div>
+          </PanelScroll>
         </motion.aside>
       )}
     </AnimatePresence>
+  );
+}
+
+/**
+ * The panel's scroll area with a collapsing sticky header: as you scroll, the 4:3 flag morphs into
+ * a small round flag, the name shrinks, the official name and region fade away, and the header
+ * stays pinned to the top. Driven by scroll position, so it tracks the finger/wheel exactly.
+ */
+function PanelScroll({ c, onClose, children }: { c: CountryIndexItem; onClose: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const { scrollY } = useScroll({ container: ref });
+  const p = useTransform(scrollY, [0, 90], [0, 1]);
+  const flagW = useTransform(p, [0, 1], [96, 40]);
+  const flagH = useTransform(p, [0, 1], [72, 40]);
+  const flagR = useTransform(p, [0, 1], [12, 20]);
+  const rectOpacity = useTransform(p, [0.3, 0.75], [1, 0]);
+  const roundOpacity = useTransform(p, [0.3, 0.75], [0, 1]);
+  const nameSize = useTransform(p, [0, 1], [24, 18]);
+  const subOpacity = useTransform(p, [0, 0.45], [1, 0]);
+  const subHeight = useTransform(p, [0, 0.6], [40, 0]);
+  const padTop = useTransform(p, [0, 1], [20, 12]);
+  const padBottom = useTransform(p, [0, 1], [8, 10]);
+  const rule = useTransform(p, (v) => (v > 0.7 ? '0 1px 0 var(--line)' : '0 0 0 transparent'));
+
+  // new country: start at the top, fully expanded
+  useEffect(() => {
+    ref.current?.scrollTo({ top: 0 });
+  }, [c.code]);
+
+  return (
+    <div ref={ref} className="overflow-y-auto overscroll-contain px-5 pb-5">
+      <motion.div className="sticky top-0 z-10 -mx-5 px-5" style={{ paddingTop: padTop, paddingBottom: padBottom, background: 'var(--surface)', boxShadow: rule }}>
+        <div className="flex items-center gap-3.5">
+          <motion.div
+            className="relative shrink-0 overflow-hidden"
+            style={{ width: flagW, height: flagH, borderRadius: flagR, boxShadow: '0 10px 20px -10px var(--clay-drop), 0 2px 6px var(--clay-drop-2)' }}
+          >
+            {/* the 4:3 flag cross-fades into the square flag, which is redrawn for circles */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <motion.img src={c.flag} alt={`Flag of ${c.name}`} className="absolute inset-0 h-full w-full" style={{ opacity: rectOpacity }} />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <motion.img src={c.flagSquare} alt="" aria-hidden className="absolute inset-0 h-full w-full object-cover" style={{ opacity: roundOpacity }} />
+          </motion.div>
+          <div className="min-w-0 flex-1">
+            <motion.h2 className="truncate font-black leading-tight tracking-tight" style={{ fontSize: nameSize }}>
+              {c.name}
+            </motion.h2>
+            <motion.div className="overflow-hidden" style={{ opacity: subOpacity, height: subHeight }}>
+              <p className="mt-0.5 truncate text-xs font-bold text-[var(--ink-3)]">{c.official}</p>
+              <p className="mt-1 text-xs font-extrabold text-[var(--accent)]">{c.subregion || c.region}</p>
+            </motion.div>
+          </div>
+          <button onClick={onClose} aria-label="Close" className="clay clay-interactive clay-focus flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-black text-[var(--ink-2)]" data-elev="1">
+            ×
+          </button>
+        </div>
+      </motion.div>
+      {children}
+    </div>
   );
 }

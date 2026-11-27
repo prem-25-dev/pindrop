@@ -97,9 +97,15 @@ export function buildLayers({ rawDir, outDir, countries, facts, problems }) {
     return { ...g, members };
   });
 
+  // coastline length (World Factbook archive), matched by internet country domain (.in, .uk…)
+  const coast = raw('factbook/coastline.json');
+  const tldOf = new Map(facts.map((f) => [f.cca2, f.tld || []]));
+
   for (const c of countries) {
     const iso3 = c.iso3;
     const w = wd.countries[c.code];
+    const cf = (tldOf.get(c.code) ?? []).map((t) => coast.byTld[t]).find(Boolean);
+    c.coastline = cf ? { km: cf.km, landlocked: cf.landlocked, text: cf.text, src: 'factbook' } : null;
     c.income = INCOME[income.income[iso3] ?? (c.code === 'XK' ? income.income.XKX : undefined)] ?? null;
     c.ldc = ldc.has(c.code);
     c.lldc = lldc.has(c.code);
@@ -122,6 +128,7 @@ export function buildLayers({ rawDir, outDir, countries, facts, problems }) {
         ldc: { name: m49.source, url: m49.url, retrieved: m49.retrieved },
         driving: { name: 'Wikidata (property P1622, driving side)', url: 'https://www.wikidata.org/wiki/Property:P1622', retrieved: wd.retrieved },
         gov: { name: 'Wikidata (property P856, official website)', url: 'https://www.wikidata.org/wiki/Property:P856', retrieved: wd.retrieved },
+        coastline: { name: coast.source, url: coast.url, retrieved: coast.retrieved },
       },
     }),
   );
