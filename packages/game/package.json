@@ -1,0 +1,13 @@
+{
+  "name": "@pinpoint/game",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinpoint game engine: seeded questions, answer judging, scoring",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "node --experimental-strip-types --no-warnings --test \"src/**/*.test.ts\""
+  }
+}

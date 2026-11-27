@@ -1,7 +1,7 @@
 'use client';
-import { geoArea, geoPath, geoProjection, type GeoProjection } from 'd3-geo';
+import { geoArea, geoContains, geoDistance, geoPath, geoProjection, type GeoProjection } from 'd3-geo';
 import polylabel from 'polylabel';
-import { feature } from 'topojson-client';
+import { feature, merge } from 'topojson-client';
 import type { Feature, FeatureCollection, Geometry, MultiPolygon, Polygon } from 'geojson';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 
@@ -35,9 +35,25 @@ export interface WorldShapes {
   shapes: CountryShape[];
   disputed: string[];
   projection: GeoProjection;
+  /** all land as one outline (no borders), for borderless games */
+  land: string;
+  /** real outlines per country (lon/lat), for "is this pin inside?" and distances */
+  geometry: Map<string, Feature<Polygon | MultiPolygon>[]>;
 }
 
 type Shape = Feature<Polygon | MultiPolygon, { disputed?: string }>;
+
+/** km from a [lon, lat] point to a country: 0 if inside, else the distance to its nearest outline point */
+export function kmToCountry(p: [number, number], feats: Feature<Polygon | MultiPolygon>[] | undefined): number {
+  if (!feats?.length) return Infinity;
+  if (feats.some((f) => geoContains(f, p))) return 0;
+  let best = Infinity;
+  for (const f of feats) {
+    const polys = f.geometry.type === 'MultiPolygon' ? f.geometry.coordinates : [f.geometry.coordinates];
+    for (const poly of polys) for (const v of poly[0]) best = Math.min(best, geoDistance(p, v as [number, number]));
+  }
+  return best * 6371;
+}
 
 let cache: Promise<WorldShapes> | null = null;
 
@@ -95,5 +111,6 @@ function build(topo: Topology<{ countries: GeometryCollection<{ disputed?: strin
   }
   // draw big countries first so small ones sit on top
   shapes.sort((a, b) => b.area - a.area);
-  return { w: MAP_W, h, shapes, disputed, projection };
+  const land = path(merge(topo, topo.objects.countries.geometries as never) as never) ?? '';
+  return { w: MAP_W, h, shapes, disputed, projection, land, geometry: byCode as Map<string, Feature<Polygon | MultiPolygon>[]> };
 }

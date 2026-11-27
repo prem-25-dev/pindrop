@@ -11,7 +11,8 @@
     "dev": "npm run dev -w @pinpoint/web",
     "build": "npm run build -w @pinpoint/web",
     "data": "npm run build -w @pinpoint/data",
-    "typecheck": "npm run typecheck --workspaces --if-present"
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test -w @pinpoint/game"
   },
   "engines": {
     "node": ">=22"

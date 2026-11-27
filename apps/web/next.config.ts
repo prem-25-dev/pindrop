@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
-  transpilePackages: ['@pinpoint/ui'],
+  transpilePackages: ['@pinpoint/ui', '@pinpoint/game'],
   reactStrictMode: true,
   poweredByHeader: false,
 };

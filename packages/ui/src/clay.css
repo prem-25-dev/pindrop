@@ -191,6 +191,21 @@
   --map-line: rgba(10, 10, 12, 0.75);
 }
 
+/* ---------- game maps: neutral clay land, no hints ---------- */
+:root {
+  --game-sea: color-mix(in oklab, var(--c3) 20%, var(--bg));
+  --game-land: color-mix(in oklab, var(--surface) 96%, white);
+  --game-line: color-mix(in oklab, var(--ink) 26%, var(--surface));
+  --game-hover: color-mix(in oklab, var(--surface) 70%, var(--c3) 30%);
+}
+.dark {
+  --game-sea: color-mix(in oklab, var(--c3) 16%, var(--bg));
+  --game-land: color-mix(in oklab, var(--surface) 82%, white 14%);
+  --game-line: color-mix(in oklab, var(--bg) 70%, black);
+}
+.game-country { transition: fill 0.15s ease; }
+.game-country:hover { fill: var(--game-hover); }
+
 /* ---------- background world map: one clay colour per continent ---------- */
 :root {
   --land-na: #8ed9a9;  /* North America — mint */
