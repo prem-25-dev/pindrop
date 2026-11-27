@@ -4,7 +4,7 @@ import { useCountries, type CountryIndexItem } from '@/lib/countries';
 import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { AVATAR_COLORS, TIERS, triedToday, usePassport, type Stamp, type StampTier } from '@/lib/passport';
 import { Avatar } from '../game/Avatar';
-import { Book, Paper, viewOf } from './Book';
+import { Book, ClayRelief, COVER, PAD, Paper, viewOf } from './Book';
 import { StampQuiz } from './StampQuiz';
 import { StampArt } from './Stamps';
 
@@ -18,8 +18,8 @@ function useBookSize() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const spread = vw >= 900;
-      const byH = (vh - 320) / 1.42;
-      const pw = Math.round(Math.max(280, spread ? Math.min(400, (vw - 160) / 2, byH) : Math.min(380, vw - 40, Math.max(byH, 300))));
+      const byH = (vh - 340 - PAD * 2) / 1.42;
+      const pw = Math.round(Math.max(260, spread ? Math.min(400, (vw - 200) / 2, byH) : Math.min(380, vw - 76, Math.max(byH, 300))));
       setSize({ pw, ph: Math.round(pw * 1.42), spread });
     };
     fit();
@@ -31,72 +31,61 @@ function useBookSize() {
 
 /* ---------------- pages ---------------- */
 
-function Cover({ name }: { name: string }) {
-  const gold = 'url(#gold)';
+/** raised clay lettering: lit from the top left, casting a soft shadow down and right */
+const raised = (size: number) => ({
+  color: COVER.ink,
+  textShadow: `-1px -1px 0 rgba(255,255,255,.55), 1px 1px 0 rgba(200,185,150,.9), ${size * 0.06}px ${size * 0.12}px 0 rgba(28,52,100,.35), ${size * 0.1}px ${size * 0.22}px ${size * 0.3}px rgba(20,40,85,.45)`,
+});
+
+function Cover({ name, stamps }: { name: string; stamps: number }) {
+  const cream = COVER.ink;
   return (
     <div
-      className="relative flex h-full w-full flex-col items-center justify-between py-[12%] text-center"
+      className="relative flex h-full w-full flex-col items-center justify-between py-[11%] text-center"
       style={{
-        background: 'radial-gradient(120% 90% at 30% 10%, #8c2a3a 0%, #6a1b29 45%, #4a111c 100%)',
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.06), inset -10px 0 24px rgba(0,0,0,.35), inset 6px 0 10px rgba(255,255,255,.05)',
+        background: `radial-gradient(130% 95% at 28% 8%, ${COVER.light} 0%, ${COVER.base} 46%, ${COVER.dark} 100%)`,
+        boxShadow: 'inset 9px 9px 16px rgba(255,255,255,.35), inset -12px -14px 22px rgba(15,35,80,.4)',
       }}
     >
-      {/* leather grain */}
-      <div className="pointer-events-none absolute inset-0 opacity-[.18] mix-blend-overlay" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 0.6px, transparent 0.7px)', backgroundSize: '4px 4px' }} aria-hidden />
-      <svg width="0" height="0" aria-hidden>
+      {/* clay grain, pressed by fingers */}
+      <div className="pointer-events-none absolute inset-0 opacity-60 mix-blend-soft-light" style={{ backgroundImage: 'radial-gradient(rgba(255,255,255,.55) 0.7px, transparent 0.9px), radial-gradient(rgba(0,0,0,.25) 0.7px, transparent 0.9px)', backgroundSize: '5px 5px, 7px 7px', backgroundPosition: '0 0, 2px 3px' }} aria-hidden />
+      <svg width="0" height="0" className="absolute" aria-hidden>
         <defs>
-          <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#f7e2a1" />
-            <stop offset=".45" stopColor="#d7ad52" />
-            <stop offset=".7" stopColor="#f2d58a" />
-            <stop offset="1" stopColor="#a87c2c" />
-          </linearGradient>
+          <ClayRelief id="cover-relief" soft={1.6} depth={4} />
         </defs>
       </svg>
       <div className="relative">
-        <p className="text-[13px] font-black tracking-[.42em]" style={{ color: '#e6c675', textShadow: '0 1px 0 rgba(0,0,0,.45), 0 -1px 0 rgba(255,240,200,.25)' }}>
-          PINPOINT
-        </p>
-        <p className="mt-1 text-[9px] font-extrabold tracking-[.38em]" style={{ color: '#d9b45a' }}>
-          REPUBLIC OF CURIOUS TRAVELLERS
-        </p>
-      </div>
-      {/* emblem: a globe held by a pin, in a laurel ring */}
-      <svg viewBox="0 0 120 120" className="relative w-[46%]" aria-hidden style={{ filter: 'drop-shadow(0 1px 0 rgba(0,0,0,.5)) drop-shadow(0 -1px 0 rgba(255,230,170,.18))' }}>
-        <g fill="none" stroke={gold} strokeWidth="2.4">
-          <circle cx="60" cy="62" r="30" />
-          <ellipse cx="60" cy="62" rx="13" ry="30" />
-          <line x1="30" y1="62" x2="90" y2="62" />
-          <path d="M34 47 h52 M34 77 h52" />
-        </g>
-        {Array.from({ length: 9 }, (_, i) => {
-          const a = Math.PI * (0.62 + i * 0.085);
-          const b = Math.PI * (0.38 - i * 0.085);
-          return (
-            <g key={i} fill={gold}>
-              <ellipse cx={60 + 44 * Math.cos(a)} cy={62 + 44 * Math.sin(a)} rx="5.5" ry="2.4" transform={`rotate(${(a * 180) / Math.PI + 90} ${60 + 44 * Math.cos(a)} ${62 + 44 * Math.sin(a)})`} />
-              <ellipse cx={60 + 44 * Math.cos(b)} cy={62 + 44 * Math.sin(b)} rx="5.5" ry="2.4" transform={`rotate(${(b * 180) / Math.PI + 90} ${60 + 44 * Math.cos(b)} ${62 + 44 * Math.sin(b)})`} />
-            </g>
-          );
-        })}
-        <path d="M60 6c-8 0-14 6-14 14 0 10 14 24 14 24s14-14 14-24c0-8-6-14-14-14Z" fill={gold} />
-        <circle cx="60" cy="20" r="5" fill="#6a1b29" />
-      </svg>
-      <div className="relative">
-        <p className="text-[22px] font-black tracking-[.3em]" style={{ color: '#e9c97a', textShadow: '0 1px 0 rgba(0,0,0,.5), 0 -1px 0 rgba(255,240,200,.25)' }}>
+        <p className="text-[34px] font-black leading-none tracking-[.12em]" style={raised(34)}>
           PASSPORT
         </p>
-        <p className="mt-1 text-[10px] font-bold tracking-[.25em]" style={{ color: '#cfa952' }}>
-          {name.toUpperCase()}
+        <p className="mt-2 text-[9px] font-extrabold tracking-[.38em]" style={{ color: 'rgba(251,243,223,.8)' }}>
+          PINPOINT · CURIOUS TRAVELLERS
         </p>
-        {/* e-passport chip mark */}
-        <svg viewBox="0 0 40 26" className="mx-auto mt-4 w-9" aria-hidden>
-          <g fill="none" stroke="#d9b45a" strokeWidth="1.8">
-            <rect x="2" y="2" width="36" height="22" rx="3" />
-            <circle cx="20" cy="13" r="5" />
-            <path d="M2 13h13M25 13h13" />
-          </g>
-        </svg>
+      </div>
+      {/* emblem: a clay globe held by a pin, in a laurel ring */}
+      <svg viewBox="-8 -8 136 136" className="relative w-[52%]" aria-hidden>
+        <g filter="url(#cover-relief)">
+          <circle cx="60" cy="64" r="31" fill="#8fd3b0" />
+          <path d="M44 50c6-6 14-4 16 2s-4 8-2 13-8 8-12 3-7-12-2-18Z M68 72c5-3 12 0 13 5s-5 9-10 7-7-9-3-12Z M70 44c4-2 9 0 9 4s-5 4-7 3-4-5-2-7Z" fill="#5fb886" />
+          {Array.from({ length: 8 }, (_, i) => {
+            const a = Math.PI * (0.64 + i * 0.09);
+            const b = Math.PI * (0.36 - i * 0.09);
+            const leaf = (t: number, k: string) => (
+              <ellipse key={k} cx={60 + 47 * Math.cos(t)} cy={64 + 47 * Math.sin(t)} rx="7" ry="3.4" fill={cream} transform={`rotate(${(t * 180) / Math.PI + 90} ${60 + 47 * Math.cos(t)} ${64 + 47 * Math.sin(t)})`} />
+            );
+            return [leaf(a, `a${i}`), leaf(b, `b${i}`)];
+          })}
+          <path d="M60 2c-9 0-16 7-16 16 0 11 16 27 16 27s16-16 16-27c0-9-7-16-16-16Z" fill="#ff8a5b" />
+          <circle cx="60" cy="18" r="5.5" fill={cream} />
+        </g>
+      </svg>
+      <div className="relative flex flex-col items-center">
+        <p className="max-w-[80%] truncate text-[13px] font-black tracking-[.22em]" style={raised(13)}>
+          {(name || 'Traveller').toUpperCase()}
+        </p>
+        <span className="mt-3 rounded-full px-3 py-1 text-[10px] font-black tracking-[.18em]" style={{ color: COVER.dark, background: `linear-gradient(180deg, #fff8e8, #e9dcbc)`, boxShadow: 'inset 2px 2px 3px rgba(255,255,255,.8), inset -2px -3px 4px rgba(140,110,60,.3), 0 4px 6px -1px rgba(15,35,80,.45)' }}>
+          {stamps} {stamps === 1 ? 'STAMP' : 'STAMPS'}
+        </span>
       </div>
     </div>
   );
@@ -146,7 +135,7 @@ function DataPage({ byCode, list, stampCount, pw }: { byCode: Map<string, Countr
   );
   return (
     <Paper n={1}>
-      <div className="flex h-full flex-col px-[7%] pb-8 pt-[7%]">
+      <div className="flex h-full flex-col pb-8 pl-[12%] pr-[7%] pt-[7%]">
         <div className="flex items-baseline justify-between">
           <p className="text-[10px] font-black tracking-[.3em] text-[#6a1b29]">PASSPORT</p>
           <button onClick={() => setEdit((e) => !e)} className="clay-focus rounded-full px-2.5 py-1 text-[11px] font-black text-[#6a1b29] hover:bg-black/5" aria-expanded={edit}>
@@ -186,7 +175,10 @@ function DataPage({ byCode, list, stampCount, pw }: { byCode: Map<string, Countr
           <>
             <div className="mt-3 flex gap-3">
               {/* photo with a hologram sheen */}
-              <div className="relative flex aspect-[3/4] w-[34%] shrink-0 items-center justify-center overflow-hidden rounded-md" style={{ background: 'linear-gradient(160deg,#e9e2d2,#d6cbb3)', boxShadow: 'inset 0 0 0 1px rgba(0,0,0,.12)' }}>
+              <div
+                className="relative flex aspect-[3/4] w-[34%] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[5px] border-[#fffaf0]"
+                style={{ background: `radial-gradient(circle at 35% 25%, ${COVER.light}, ${COVER.base})`, boxShadow: '0 0 0 1px rgba(160,130,80,.25), 4px 6px 10px -2px rgba(90,65,30,.35), -2px -2px 4px rgba(255,255,255,.7)' }}
+              >
                 <Avatar color={color} size={78} label="Passport photo" />
                 <span className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay" style={{ background: 'linear-gradient(115deg, transparent 20%, #8ef 35%, #f9c 50%, #ff9 62%, transparent 75%)' }} aria-hidden />
               </div>
@@ -285,7 +277,7 @@ function EarnPage({ list, n, onPick }: { list: CountryIndexItem[]; n: number; on
   const open = list.filter((c) => !triedToday(tries, c.code) && stamps[c.code]?.tier !== 'entry');
   return (
     <Paper n={n}>
-      <div className="flex h-full flex-col px-[6%] pb-8 pt-[6%]">
+      <div className="flex h-full flex-col pb-8 pl-[12%] pr-[6%] pt-[6%]">
         <p className="text-[10px] font-black tracking-[.3em] text-[#6a1b29]">EARN A STAMP</p>
         <p className="mt-1 text-[11px] font-bold leading-snug text-[#6b5434]">Ten questions about one country. 10/10 inks an entry stamp, 8–9 a postage stamp, 6–7 a luggage tag. One try per country a day.</p>
         <div className="mt-2.5 flex gap-2">
@@ -355,7 +347,7 @@ export function PassportScreen() {
   ordered.forEach((s) => counts[s.tier]++);
 
   const pages = [
-    <Cover key="cover" name={name} />,
+    <Cover key="cover" name={name} stamps={ordered.length} />,
     <DataPage key="data" byCode={byCode} list={list} stampCount={ordered.length} pw={pw} />,
     ...Array.from({ length: stampPages }, (_, i) => (
       <StampPage key={`s${i}`} stamps={ordered.slice(i * PER_PAGE, (i + 1) * PER_PAGE)} n={i + 2} byCode={byCode} world={world} pw={pw} first={i === 0} />
@@ -410,7 +402,7 @@ export function PassportScreen() {
         </div>
       </div>
 
-      <div className="flex justify-center px-6 py-2" style={{ filter: 'drop-shadow(0 30px 30px var(--clay-drop)) drop-shadow(0 6px 10px var(--clay-drop-2))' }}>
+      <div className="flex justify-center px-6 pb-10 pt-6">
         <Book pages={pages} insideCover={<InsideCover />} at={at} onTurn={go} pw={pw} ph={ph} spread={spread} />
       </div>
       <p className="mt-5 text-center text-xs font-bold text-[var(--ink-3)]">Use the arrows or ← → keys to turn pages.</p>

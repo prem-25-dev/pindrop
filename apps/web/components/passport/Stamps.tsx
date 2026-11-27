@@ -3,6 +3,7 @@ import { useId } from 'react';
 import type { CountryIndexItem } from '@/lib/countries';
 import type { WorldShapes } from '@/lib/geo';
 import type { Stamp } from '@/lib/passport';
+import { ClayRelief } from './Book';
 
 /*
  * Three keepsakes, one per score band. Each one carries the country's own outline as its emblem:
@@ -47,6 +48,16 @@ function InkFilter({ id, seed }: { id: string; seed: number }) {
   );
 }
 
+/** a slight hand-rolled wobble, so clay ropes are not machine perfect */
+function Wobble({ id, seed }: { id: string; seed: number }) {
+  return (
+    <filter id={id} x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed={seed} result="n" />
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="3" />
+    </filter>
+  );
+}
+
 function shapeFor(region: string): 'circle' | 'rect' | 'octagon' | 'oval' | 'hex' {
   if (region === 'Europe') return 'circle';
   if (region === 'Asia') return 'rect';
@@ -68,16 +79,18 @@ export function EntryStamp({ c, stamp, world, size = 150 }: { c: CountryIndexIte
   const kind = shapeFor(c.region);
   const name = c.name.toUpperCase();
   const fs = name.length > 16 ? 8 : name.length > 11 ? 9.5 : 11;
-  const border = { fill: 'none', stroke: ink, strokeWidth: 3 } as const;
-  const inner = { fill: 'none', stroke: ink, strokeWidth: 1.2 } as const;
+  const border = { fill: 'none', stroke: ink, strokeWidth: 6, strokeLinejoin: 'round' } as const;
+  const inner = { fill: 'none', stroke: ink, strokeWidth: 2.4, strokeLinejoin: 'round' } as const;
   return (
-    <svg viewBox="0 0 160 160" width={size} height={size} role="img" aria-label={`Entry stamp: ${c.name}, ${stamp.score} of 10`} style={{ rotate: `${tiltFor(c.code)}deg`, mixBlendMode: 'multiply' }}>
+    <svg viewBox="0 0 160 160" width={size} height={size} role="img" aria-label={`Entry stamp: ${c.name}, ${stamp.score} of 10`} style={{ rotate: `${tiltFor(c.code)}deg`, overflow: 'visible' }}>
       <defs>
-        <InkFilter id={`i${id}`} seed={Math.abs(hash(c.code)) % 50} />
+        <Wobble id={`w${id}`} seed={Math.abs(hash(c.code)) % 50} />
+        <ClayRelief id={`i${id}`} soft={1.1} depth={2.6} />
         <path id={`a${id}`} d="M 30 80 A 50 50 0 0 1 130 80" />
         <path id={`b${id}`} d="M 34 86 A 46 46 0 0 0 126 86" />
       </defs>
       <g filter={`url(#i${id})`}>
+       <g filter={`url(#w${id})`}>
         {kind === 'circle' && (
           <>
             <circle cx="80" cy="80" r="70" {...border} />
@@ -137,6 +150,7 @@ export function EntryStamp({ c, stamp, world, size = 150 }: { c: CountryIndexIte
             <text x="80" y="125" fontSize="7.5" fontWeight="800" fill={ink} textAnchor="middle">{fmtDate(stamp.date)}</text>
           </>
         )}
+       </g>
       </g>
     </svg>
   );
@@ -160,16 +174,24 @@ export function PostageStamp({ c, stamp, world, size = 130 }: { c: CountryIndexI
             <circle key={i} cx={x} cy={y} r="3.2" fill="#000" />
           ))}
         </mask>
+        <linearGradient id={`g${id}`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff" stopOpacity=".35" />
+          <stop offset=".45" stopColor="#fff" stopOpacity="0" />
+          <stop offset="1" stopColor="#000" stopOpacity=".22" />
+        </linearGradient>
         <clipPath id={`c${id}`}>
           <rect x="11" y="11" width={W - 22} height="92" rx="2" />
         </clipPath>
         <InkFilter id={`i${id}`} seed={Math.abs(hash(c.code + 'p')) % 50} />
+        <ClayRelief id={`r${id}`} soft={2} depth={4} />
       </defs>
-      <g style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.25))' }}>
+      <g filter={`url(#r${id})`}>
         <rect x="0" y="0" width={W} height={H} fill="#fbf6ea" mask={`url(#m${id})`} />
       </g>
       <image href={c.flag} x="11" y="11" width={W - 22} height="92" preserveAspectRatio="xMidYMid slice" clipPath={`url(#c${id})`} />
-      <rect x="11" y="11" width={W - 22} height="92" fill="none" stroke="rgba(0,0,0,.25)" strokeWidth="1" />
+      {/* the flag is a puffy clay inlay: a soft highlight and shade over it */}
+      <rect x="11" y="11" width={W - 22} height="92" rx="2" fill={`url(#g${id})`} />
+      <rect x="11" y="11" width={W - 22} height="92" rx="2" fill="none" stroke="rgba(255,255,255,.55)" strokeWidth="1.5" />
       {/* the outline in white over the flag, like a printed motif */}
       <Silhouette code={c.code} world={world} x={W / 2} y={57} size={46} fill="#fff" opacity={0.85} />
       <text x="14" y="122" fontSize="11" fontWeight="900" fill={ink}>{c.name.length > 14 ? c.iso3 : c.name.toUpperCase()}</text>
@@ -191,19 +213,23 @@ export function PostageStamp({ c, stamp, world, size = 130 }: { c: CountryIndexI
 
 /** 6-7: a souvenir luggage tag */
 export function LuggageTag({ c, stamp, world, size = 150 }: { c: CountryIndexItem; stamp: Stamp; world: WorldShapes | null; size?: number }) {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
   const ink = inkFor(c.code);
   const bars = Array.from({ length: 22 }, (_, i) => ((Math.abs(hash(c.code + i)) % 3) + 1) * 0.9);
   let bx = 54;
   return (
-    <svg viewBox="0 0 170 100" width={size} height={(size * 100) / 170} role="img" aria-label={`Luggage tag: ${c.name}, ${stamp.score} of 10`} style={{ rotate: `${tiltFor(c.code, 8)}deg` }}>
+    <svg viewBox="0 0 170 100" width={size} height={(size * 100) / 170} role="img" aria-label={`Luggage tag: ${c.name}, ${stamp.score} of 10`} style={{ rotate: `${tiltFor(c.code, 8)}deg`, overflow: 'visible' }}>
+      <defs>
+        <ClayRelief id={`r${id}`} soft={2} depth={4} />
+      </defs>
       {/* string */}
-      <path d="M 4 50 C -10 30, 10 10, 30 30" fill="none" stroke="#b08a5a" strokeWidth="1.6" />
-      <g style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.25))' }}>
+      <path d="M 4 50 C -10 30, 10 10, 30 30" fill="none" stroke="#c79a62" strokeWidth="3" strokeLinecap="round" filter={`url(#r${id})`} />
+      <g filter={`url(#r${id})`}>
         <path d="M 22 18 L 40 4 H 162 a 6 6 0 0 1 6 6 V 90 a 6 6 0 0 1 -6 6 H 40 L 22 82 Z" fill="#d9b98a" />
       </g>
       <path d="M 22 18 L 40 4 H 162 a 6 6 0 0 1 6 6 V 90 a 6 6 0 0 1 -6 6 H 40 L 22 82 Z" fill="none" stroke="rgba(0,0,0,.12)" />
       <circle cx="34" cy="50" r="5" fill="var(--paper, #f3ead8)" stroke="#a5865a" strokeWidth="2" />
-      <rect x="48" y="4" width="10" height="92" fill={ink} opacity=".85" />
+      <rect x="48" y="4" width="10" height="92" fill={ink} opacity=".85" filter={`url(#r${id})`} />
       <text x="66" y="22" fontSize="7" fontWeight="800" fill="#5b4527" letterSpacing="1.5">SOUVENIR · {stamp.score}/10</text>
       <text x="64" y="54" fontSize="32" fontWeight="900" fill="#2b2115" letterSpacing="1">{c.iso3}</text>
       <text x="66" y="67" fontSize="8" fontWeight="800" fill="#5b4527">{c.name.length > 20 ? c.name.slice(0, 19) + '…' : c.name}</text>

@@ -25,24 +25,24 @@ export function useCountdown(seconds: number, running: boolean, onExpire: () => 
   expire.current = onExpire;
   useEffect(() => {
     if (!seconds || !running) return;
-    const end = performance.now() + left;
-    let raf = 0;
+    // wall-clock based, ticked by an interval (animation frames stop when the window loses focus)
+    const end = Date.now() + left;
     let fired = false;
-    const tick = () => {
-      const l = Math.max(0, end - performance.now());
-      setLeft(l);
-      if (l <= 0 && !fired) {
-        fired = true;
-        expire.current();
-        return;
-      }
-      raf = requestAnimationFrame(tick);
+    const fire = () => {
+      if (fired) return;
+      fired = true;
+      clearInterval(iv);
+      setLeft(0);
+      expire.current();
     };
-    raf = requestAnimationFrame(tick);
-    // keep counting if the tab hides (rAF pauses): a timeout as a fallback
-    const to = setTimeout(() => !fired && ((fired = true), setLeft(0), expire.current()), left + 50);
+    const iv = setInterval(() => {
+      const l = Math.max(0, end - Date.now());
+      if (l <= 0) fire();
+      else setLeft(l);
+    }, 100);
+    const to = setTimeout(fire, left + 30);
     return () => {
-      cancelAnimationFrame(raf);
+      clearInterval(iv);
       clearTimeout(to);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -52,9 +52,21 @@ export function useCountdown(seconds: number, running: boolean, onExpire: () => 
 
 export function TimerBar({ left, total }: { left: number; total: number }) {
   const f = total ? left / total : 1;
+  const secs = Math.ceil(left / 1000);
+  const low = f <= 0.33;
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--ink)_10%,transparent)]" role="timer" aria-label={`${Math.ceil(left / 1000)} seconds left`}>
-      <div className="h-full rounded-full transition-[width] duration-100 ease-linear" style={{ width: `${f * 100}%`, background: f > 0.33 ? 'var(--c4)' : 'var(--bad)' }} />
+    <div className="flex w-full items-center gap-2.5" role="timer" aria-label={`${secs} seconds left`}>
+      <span
+        className="clay grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-black tabular-nums"
+        data-elev="1"
+        style={{ color: low ? 'var(--bad)' : 'var(--ink)' }}
+        aria-hidden
+      >
+        {secs}
+      </span>
+      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[color-mix(in_oklab,var(--ink)_10%,transparent)]">
+        <div className="h-full rounded-full transition-[width] duration-100 ease-linear" style={{ width: `${f * 100}%`, background: low ? 'var(--bad)' : 'var(--c4)' }} />
+      </div>
     </div>
   );
 }

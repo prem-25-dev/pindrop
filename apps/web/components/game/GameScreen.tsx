@@ -35,7 +35,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const list = useCountries();
   const [world, setWorld] = useState<WorldShapes | null>(null);
   const [phase, setPhase] = useState<Phase>('setup');
-  const [settings, setSettings] = useState<GameSettings>({ difficulty: 'tourist', scope: 'world', length: game.defaultLength, timer: 0, seed: '', bots: 0, botLevel: 'medium', borders: false });
+  const [settings, setSettings] = useState<GameSettings>({ difficulty: 'tourist', scope: 'world', length: game.defaultLength, timer: 20, seed: '', bots: 0, botLevel: 'medium', borders: false });
   const [questions, setQuestions] = useState<string[]>([]);
   const [results, setResults] = useState<RoundResult[]>([]);
   /** the round on screen once it is revealed, until the player moves on */
