@@ -1,7 +1,7 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { LeaderboardScreen } from '@/components/leaderboard/LeaderboardScreen';
 
 export const metadata = { title: 'Leaderboard' };
 
 export default function Page() {
-  return <ComingSoon icon="trophy" milestone="Milestone 4" title="Leaderboards" body="Global, daily, weekly, by country and among friends." />;
+  return <LeaderboardScreen />;
 }

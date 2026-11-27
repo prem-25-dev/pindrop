@@ -7,6 +7,8 @@ import type { ClayIconName } from '@pinpoint/ui';
 import { botBanter, makeBots } from '@/lib/bot';
 import { useCountries } from '@/lib/countries';
 import { useFocusMode } from '@/lib/focus';
+import { useHistory } from '@/lib/history';
+import { usePassport } from '@/lib/passport';
 import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { GAMES, LIVES, buildQuestions, readBest, readSettings, saveBest, saveSettings, type GameId, type GameSettings } from '@/lib/games';
 import { FlagRound } from './FlagRound';
@@ -45,6 +47,8 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const msgId = useRef(0);
   const guessRef = useRef<((text: string) => boolean) | null>(null);
   const setFocus = useFocusMode((s) => s.setFocus);
+  const addGame = useHistory((s) => s.add);
+  const myColor = usePassport((s) => s.color);
 
   const bots = useMemo(() => makeBots(settings.bots, settings.botLevel), [settings.bots, settings.botLevel]);
 
@@ -84,7 +88,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const onSend = (text: string) => {
     // during a typed round the chat is the answer box; otherwise it is just chat
     if (guessRef.current?.(text)) return;
-    post({ from: YOU.id, name: YOU.name, color: YOU.color, text });
+    post({ from: YOU.id, name: YOU.name, color: myColor, text });
   };
 
   // every question starts with everyone thinking
@@ -117,9 +121,27 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
       const score = all.reduce((sum, r) => sum + r.points, 0);
       setNewBest(all.length > 0 && saveBest(gameId, settings, score));
       setBest(readBest(gameId, settings));
+      // the local leaderboard keeps every finished game
+      if (all.length) {
+        const me = usePassport.getState();
+        addGame({
+          game: gameId,
+          difficulty: settings.difficulty,
+          scope: settings.scope,
+          length: settings.length,
+          timer: settings.timer,
+          borders: settings.borders,
+          botLevel: bots.length ? settings.botLevel : null,
+          rounds: all.length,
+          players: [
+            { id: YOU.id, name: me.name || 'You', color: me.color, score, right: all.filter((r) => r.correct).length },
+            ...bots.map((b, i) => ({ id: b.id, name: b.name, color: b.color, bot: true, score: all.reduce((s, r) => s + (r.bots?.[i]?.points ?? 0), 0), right: all.filter((r) => r.bots?.[i]?.correct).length })),
+          ],
+        });
+      }
       setPhase('results');
     },
-    [gameId, settings],
+    [gameId, settings, bots, addGame],
   );
 
   /** a round is decided on screen: scores update, faces react, bots chat */
@@ -176,6 +198,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const players: RoomPlayer[] = [
     {
       ...YOU,
+      color: myColor,
       isYou: true,
       score: shown.reduce((s, r) => s + r.points, 0),
       status: status[YOU.id] ?? 'idle',

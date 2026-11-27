@@ -6,6 +6,7 @@ import { botFlag, type BotPlayer } from '@/lib/bot';
 import type { CountryIndexItem } from '@/lib/countries';
 import { choicesFor, type GameSettings } from '@/lib/games';
 import { YOU, type RoomPlayer } from './GameRoom';
+import { usePassport } from '@/lib/passport';
 import type { Post } from './GameScreen';
 import { Confetti, Feedback, Flag, TimerBar, useCountdown, type RoundResult } from './shared';
 
@@ -101,7 +102,7 @@ export function FlagRound({
       return true;
     }
     // wrong guesses are public, like in a party room
-    post({ from: YOU.id, name: YOU.name, color: YOU.color, text });
+    post({ from: YOU.id, name: YOU.name, color: usePassport.getState().color, text });
     setTries(used);
     setShake((s) => s + 1);
     if (used >= TRIES) finish(false, text, used);

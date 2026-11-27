@@ -5,6 +5,7 @@ import type { CountryIndexItem } from '@/lib/countries';
 import { makeBots } from '@/lib/bot';
 import { Avatar } from './Avatar';
 import { YOU } from './GameRoom';
+import { usePassport } from '@/lib/passport';
 import type { GameDef, GameSettings } from '@/lib/games';
 import { Confetti, type RoundResult } from './shared';
 
@@ -20,6 +21,7 @@ export function Results({
   onAgain: () => void;
   onSettings: () => void;
 }) {
+  const myColor = usePassport((s) => s.color);
   const score = results.reduce((s, r) => s + r.points, 0);
   const right = results.filter((r) => r.correct).length;
   let bestStreak = 0;
@@ -32,7 +34,7 @@ export function Results({
   const bots = makeBots(settings.bots, settings.botLevel);
   const vsBot = bots.length > 0;
   const standings = [
-    { id: YOU.id, name: YOU.name, color: YOU.color, score },
+    { id: YOU.id, name: YOU.name, color: myColor, score },
     ...bots.map((b, i) => ({ id: b.id, name: b.name, color: b.color, score: results.reduce((s, r) => s + (r.bots?.[i]?.points ?? 0), 0) })),
   ].sort((a, b) => b.score - a.score || (a.id === YOU.id ? -1 : 1));
   const top = standings[0];
