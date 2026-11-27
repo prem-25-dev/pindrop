@@ -8,11 +8,23 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
  * Wide screens show a spread (left page = back of the last turned leaf); phones show one page at a time.
  */
 
-export const COVER = { base: '#4f7fd1', light: '#7aa5ec', dark: '#33589e', ink: '#fbf3df' };
-const BOARD = { base: '#3d66b3', light: '#5f8ad6', dark: '#274a8a' };
-/** how far the board reaches past the pages */
+export const COVER = { base: '#4f7fd1', light: '#86b0f0', dark: '#2f5398', ink: '#fbf3df' };
+export const BOARD = { base: '#3d66b3', light: '#5f8ad6', dark: '#244681' };
+/** how far the boards reach past the pages */
 export const PAD = 14;
+/** board thickness, for the edge you see while the cover swings */
+const T = 9;
 const PAPER_EDGE = ['#f1e6cd', '#ddcdaa', '#ebdfc3', '#d3c19b'];
+const EASE = [0.66, 0, 0.22, 1] as const;
+const COVER_S = 1.25;
+const PAGE_S = 0.9;
+
+const boardFill = `radial-gradient(130% 90% at 25% 10%, ${BOARD.light} 0%, ${BOARD.base} 45%, ${BOARD.dark} 100%)`;
+const boardShade = 'inset 6px 6px 12px rgba(255,255,255,.25), inset -8px -10px 18px rgba(10,25,60,.35)';
+/** layers of paper and board under the top board: the thickness of the book */
+const strata = `0 3px 0 #f4ead3, 0 5px 0 #ddcca8, 0 7px 0 #efe3c6, 0 9px 0 #d6c39c, 0 13px 0 ${BOARD.dark}, 0 34px 44px -14px rgba(15,30,65,.6)`;
+const curlL = 'linear-gradient(90deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
+const curlR = 'linear-gradient(270deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
 
 export function Book({
   pages, insideCover, at, onTurn, pw, ph, spread,
@@ -40,96 +52,158 @@ export function Book({
   const leafOf = (page: number) => (spread ? (page === 0 ? 0 : (viewOf(page, true) + 1) / 2) : page);
   const turned = leafOf(at);
 
-  // the leaf in motion goes on top until it lands
-  const [moving, setMoving] = useState<number | null>(null);
+  // the leaf in motion goes on top until it lands, with a shadow sweeping the pages under it
+  const [moving, setMoving] = useState<{ leaf: number; id: number } | null>(null);
   const prev = useRef(turned);
   useEffect(() => {
     if (prev.current === turned) return;
-    const m = turned > prev.current ? prev.current : turned;
+    const leaf = turned > prev.current ? prev.current : turned;
     prev.current = turned;
-    setMoving(m);
-    const t = setTimeout(() => setMoving(null), 900);
+    setMoving({ leaf, id: Date.now() });
+    const t = setTimeout(() => setMoving(null), (leaf === 0 ? COVER_S : PAGE_S) * 1000 + 80);
     return () => clearTimeout(t);
   }, [turned]);
 
-  const closed = spread && turned === 0;
+  const [hover, setHover] = useState(false);
+  const closed = turned === 0;
   const n = leaves.length;
   // page-edge layers under each side, in proportion to how many leaves lie there
   const layers = (count: number) => (count <= 0 ? 0 : Math.max(1, Math.min(4, Math.round((count / n) * 5))));
   const leftLayers = spread ? layers(turned - 1) : 0;
-  const rightLayers = layers(n - turned - 1);
+  const rightLayers = closed ? 0 : layers(n - turned - 1);
   const left0 = spread ? pw : 0; // x of the spine
-  const spring = reduce ? { duration: 0 } : { type: 'spring' as const, stiffness: 120, damping: 20 };
+  const dur = (s: number) => (reduce ? { duration: 0 } : { duration: s, ease: EASE });
+  // a turn starts on the render where `turned` changes, before the effect above records it
+  const movingLeaf = prev.current !== turned ? Math.min(prev.current, turned) : (moving?.leaf ?? null);
+  const zOf = (k: number) => (movingLeaf === k ? 200 : k < turned ? 20 + k * 2 : 20 + (n - k) * 2);
+  const peek = closed && hover && !reduce && movingLeaf === null;
 
   return (
     <motion.div
       className="relative mx-auto"
-      style={{ width: spread ? pw * 2 : pw, height: ph, perspective: 2400 }}
-      animate={{ x: closed ? -pw / 2 : 0 }}
-      transition={spring}
+      style={{ width: spread ? pw * 2 : pw, height: ph, perspective: 2600 }}
+      initial={false}
+      animate={{ x: spread && closed ? -(pw + PAD) / 2 : 0 }}
+      transition={dur(COVER_S)}
+      onPointerEnter={() => setHover(true)}
+      onPointerLeave={() => setHover(false)}
     >
-      {/* the clay board the pages are bound into */}
-      <motion.div
+      {/* back board: the pages are bound onto it */}
+      <div
         className="absolute"
         aria-hidden
-        initial={false}
-        animate={
-          closed
-            ? { left: pw + 3, top: 7, width: pw + 7, height: ph, borderRadius: '8px 26px 26px 8px' }
-            : { left: -PAD, top: -PAD, width: (spread ? pw * 2 : pw) + PAD * 2, height: ph + PAD * 2, borderRadius: '30px 30px 30px 30px' }
-        }
-        transition={spring}
         style={{
-          background: `radial-gradient(130% 90% at 25% 10%, ${BOARD.light} 0%, ${BOARD.base} 45%, ${BOARD.dark} 100%)`,
-          boxShadow: `inset 6px 6px 12px rgba(255,255,255,.28), inset -8px -10px 18px rgba(10,25,60,.35), 0 10px 0 ${BOARD.dark}, 0 30px 46px -14px rgba(20,35,70,.55)`,
+          left: spread ? pw : -PAD,
+          top: -PAD,
+          width: spread ? pw + PAD : pw + PAD * 2,
+          height: ph + PAD * 2,
+          zIndex: 1,
+          borderRadius: spread ? '8px 28px 28px 8px' : 28,
+          background: boardFill,
+          boxShadow: `${boardShade}, ${strata}`,
         }}
       />
 
-      {/* page edges: a stack of paper peeking out on the outer side of each page */}
+      {/* page edges: paper peeking out on the outer side of each page */}
       {Array.from({ length: leftLayers }, (_, i) => (
-        <PaperEdge key={`l${i}`} x={-(i + 1) * 3.4} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="left" />
+        <PaperEdge key={`l${i}`} x={-(i + 1) * 3.2} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="left" z={21} />
       ))}
-      {Array.from({ length: closed ? 3 : rightLayers }, (_, i) => (
-        <PaperEdge key={`r${i}`} x={left0 + (i + 1) * 3.4} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="right" />
+      {Array.from({ length: rightLayers }, (_, i) => (
+        <PaperEdge key={`r${i}`} x={left0 + (i + 1) * 3.2} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="right" z={5 - i} />
       ))}
 
       {leaves.map((leaf, k) => {
         const flipped = k < turned;
-        const z = moving === k ? 100 : flipped ? k + 10 : n - k + 10;
+        if (k === 0) {
+          // the front cover: a thick board that swings open on the spine
+          const W = pw + PAD;
+          const H = ph + PAD * 2;
+          return (
+            <motion.div
+              key={k}
+              className="absolute"
+              style={{ left: left0, top: -PAD, width: W, height: H, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: zOf(0), cursor: closed ? 'pointer' : undefined, pointerEvents: !spread && flipped ? 'none' : undefined }}
+              initial={false}
+              animate={{ rotateY: flipped ? -180 : peek ? -16 : 0 }}
+              transition={movingLeaf === 0 ? dur(COVER_S) : { type: 'spring', stiffness: 170, damping: 18 }}
+              onClick={closed ? () => onTurn(1) : undefined}
+            >
+              <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ transform: `translateZ(${T / 2}px)`, borderRadius: '8px 28px 28px 8px' }}>
+                {leaf.front}
+              </div>
+              {/* the board's outer edge, seen while it swings */}
+              <div
+                className="absolute"
+                style={{ left: W - 1, top: 12, bottom: 12, width: T, transformOrigin: 'left center', transform: `translateZ(${T / 2}px) rotateY(90deg)`, background: `linear-gradient(90deg, ${BOARD.base}, ${BOARD.dark})`, borderRadius: 3, opacity: !spread && flipped ? 0 : 1 }}
+                aria-hidden
+              />
+              {leaf.back && (
+                <div
+                  className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
+                  style={{ transform: `translateZ(${-T / 2}px) rotateY(180deg)`, borderRadius: '28px 8px 8px 28px', background: boardFill, boxShadow: boardShade, padding: `${PAD}px 0 ${PAD}px ${PAD}px` }}
+                >
+                  <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: '18px 4px 4px 18px' }}>
+                    {leaf.back}
+                    <span className="pointer-events-none absolute inset-y-0 right-0 w-[14%]" style={{ background: curlR }} aria-hidden />
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          );
+        }
         return (
           <motion.div
             key={k}
             className="absolute top-0"
-            style={{ left: left0, width: pw, height: ph, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: z, pointerEvents: !spread && flipped ? 'none' : undefined }}
+            style={{ left: left0, width: pw, height: ph, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: zOf(k), pointerEvents: !spread && flipped ? 'none' : undefined }}
             initial={false}
             animate={{ rotateY: flipped ? -180 : 0 }}
-            transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 60, damping: 15 }}
+            transition={dur(PAGE_S)}
             aria-hidden={!spread ? k !== turned : k !== turned && k !== turned - 1}
           >
-            <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ borderRadius: k === 0 ? '8px 26px 26px 8px' : '4px 18px 18px 4px' }}>
+            <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ borderRadius: '4px 18px 18px 4px' }}>
               {leaf.front}
               {/* the page curls into the spine */}
-              {k > 0 && <span className="pointer-events-none absolute inset-y-0 left-0 w-[14%]" style={{ background: 'linear-gradient(90deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)' }} aria-hidden />}
+              <span className="pointer-events-none absolute inset-y-0 left-0 w-[14%]" style={{ background: curlL }} aria-hidden />
             </div>
             {leaf.back && (
               <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ transform: 'rotateY(180deg)', borderRadius: '18px 4px 4px 18px' }}>
                 {leaf.back}
-                <span className="pointer-events-none absolute inset-y-0 right-0 w-[14%]" style={{ background: 'linear-gradient(270deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)' }} aria-hidden />
+                <span className="pointer-events-none absolute inset-y-0 right-0 w-[14%]" style={{ background: curlR }} aria-hidden />
               </div>
             )}
           </motion.div>
         );
       })}
 
+      {/* a shadow sweeps over the pages while a leaf is in the air */}
+      {moving && !reduce && (
+        <motion.div
+          key={moving.id}
+          className="pointer-events-none absolute top-0"
+          style={{
+            left: 0,
+            width: spread ? pw * 2 : pw,
+            height: ph,
+            zIndex: 199,
+            background: spread ? 'linear-gradient(90deg, transparent 8%, rgba(30,20,5,.3) 50%, transparent 92%)' : 'linear-gradient(90deg, rgba(30,20,5,.3), transparent 85%)',
+          }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: [0, 1, 0] }}
+          transition={{ duration: moving.leaf === 0 ? COVER_S : PAGE_S, ease: 'easeInOut' }}
+          aria-hidden
+        />
+      )}
+
       {/* the ringed spine, over the pages */}
       <Rings x={left0} ph={ph} />
 
-      <TurnButtons at={at} count={pages.length} spread={spread} onTurn={onTurn} pw={pw} closed={closed} />
+      <TurnButtons at={at} count={pages.length} spread={spread} onTurn={onTurn} pw={pw} closed={spread && closed} />
     </motion.div>
   );
 }
 
-function PaperEdge({ x, y, w, h, i, side }: { x: number; y: number; w: number; h: number; i: number; side: 'left' | 'right' }) {
+function PaperEdge({ x, y, w, h, i, side, z }: { x: number; y: number; w: number; h: number; i: number; side: 'left' | 'right'; z: number }) {
   return (
     <div
       className="absolute top-0"
@@ -139,7 +213,7 @@ function PaperEdge({ x, y, w, h, i, side }: { x: number; y: number; w: number; h
         top: y,
         width: w,
         height: h,
-        zIndex: 5 - i,
+        zIndex: z,
         background: PAPER_EDGE[i] ?? PAPER_EDGE[3],
         borderRadius: side === 'left' ? '18px 4px 4px 18px' : '4px 18px 18px 4px',
         boxShadow: 'inset 2px 2px 3px rgba(255,255,255,.55), inset -2px -2px 4px rgba(110,80,40,.18), 0 2px 3px rgba(40,30,15,.18)',
@@ -188,7 +262,7 @@ function TurnButtons({ at, count, spread, onTurn, pw, closed }: { at: number; co
   const views = viewsFor(count, spread);
   const i = views.indexOf(viewOf(at, spread));
   const btn = 'clay clay-interactive clay-focus absolute top-1/2 z-[160] flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-2xl text-2xl font-black text-[var(--ink-2)]';
-  const right = closed ? pw * 2 + 34 : (spread ? pw * 2 : pw) + PAD;
+  const right = closed ? pw * 2 + PAD + 40 : (spread ? pw * 2 : pw) + PAD;
   return (
     <>
       {i > 0 && (
