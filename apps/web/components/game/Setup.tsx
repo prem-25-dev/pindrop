@@ -2,6 +2,7 @@
 import { motion } from 'motion/react';
 import { ClayIcon, Segmented, type ClayIconName } from '@pinpoint/ui';
 import type { Difficulty } from '@pinpoint/game';
+import { BOTS } from '@/lib/bot';
 import { DIFFICULTIES } from '@/lib/modes';
 import type { GameDef, GameSettings, Length } from '@/lib/games';
 import { SCOPES } from '@/lib/scopes';
@@ -71,6 +72,40 @@ export function Setup({
           </Field>
 
           <div className="grid gap-6 sm:grid-cols-2">
+            <Field label="Opponent">
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Opponent">
+                {(['solo', 'easy', 'medium', 'hard'] as const).map((o) => (
+                  <button
+                    key={o}
+                    role="radio"
+                    aria-checked={settings.opponent === o}
+                    onClick={() => set({ opponent: o })}
+                    className={`clay-focus rounded-full px-3.5 py-1.5 text-sm font-extrabold ${settings.opponent === o ? 'clay-tint tint-c2' : 'clay clay-interactive text-[var(--ink-2)]'}`}
+                    data-elev="1"
+                  >
+                    {o === 'solo' ? 'Solo' : `🤖 ${BOTS[o].name}`}
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm font-semibold text-[var(--ink-2)]">{settings.opponent === 'solo' ? 'Just you and the map' : `Vs bot: ${BOTS[settings.opponent].blurb.toLowerCase()}`}</p>
+            </Field>
+            {game.id === 'pin-drop' && (
+              <Field label="Map">
+                <Segmented
+                  label="Map borders"
+                  value={settings.borders ? 'borders' : 'none'}
+                  onChange={(v: 'borders' | 'none') => set({ borders: v === 'borders' })}
+                  options={[
+                    { value: 'none', label: 'No borders' },
+                    { value: 'borders', label: 'With borders' },
+                  ]}
+                />
+                <p className="text-sm font-semibold text-[var(--ink-2)]">{settings.borders ? 'Country outlines help you aim' : 'Just the land: the classic challenge'}</p>
+              </Field>
+            )}
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2">
             <Field label="Length">
               <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Length">
                 {game.lengths.map((l) => (
@@ -118,7 +153,7 @@ export function Setup({
           </button>
         </div>
       </div>
-      <p className="mt-4 text-center text-sm font-semibold text-[var(--ink-3)]">Playing with friends arrives with Party Rooms: same games, one room code.</p>
+      <p className="mt-4 text-center text-sm font-semibold text-[var(--ink-3)]">Playing with friends arrives with Party Rooms: same games, one room code. Until then, take on a bot.</p>
     </motion.div>
   );
 }

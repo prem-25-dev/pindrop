@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ClayIcon, Dock, TabBar, type DockItem } from '@pinpoint/ui';
+import { useFocusMode } from '@/lib/focus';
 import { useSettings } from '@/lib/settings';
 import { Header } from './Header';
 import { Palette } from './Palette';
@@ -45,23 +46,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => setHydrated(true), []);
   const pos = hydrated ? dockPosition : 'bottom';
   const active = activeIdFor(path);
+  // during a game the app chrome steps aside so the game is its own screen
+  const focus = useFocusMode((s) => s.focus);
 
   return (
     <>
       <div className="clay-wallpaper" aria-hidden />
-      {!path.startsWith('/explore') && <WorldBackdrop />}
+      {!path.startsWith('/explore') && !focus && <WorldBackdrop />}
       <a href="#main" className="clay sr-only z-50 px-4 py-2 font-bold focus:not-sr-only focus:fixed focus:left-4 focus:top-4">
         Skip to content
       </a>
-      <Header />
+      {!focus && <Header />}
       <main
         id="main"
         className={`mx-auto w-full max-w-6xl px-4 pb-32 pt-24 sm:px-6 md:pb-36 ${pos === 'left' ? 'md:pl-32 md:pb-16' : ''}`}
       >
         {children}
       </main>
-      <Dock items={DOCK} activeId={active} position={pos} Link={Link} />
-      <TabBar items={TABS} activeId={active === 'guess-flag' || active === 'pin-drop' ? 'play' : active} Link={Link} />
+      {!focus && <Dock items={DOCK} activeId={active} position={pos} Link={Link} />}
+      {!focus && <TabBar items={TABS} activeId={active === 'guess-flag' || active === 'pin-drop' ? 'play' : active} Link={Link} />}
       <Palette />
       <Tour />
     </>

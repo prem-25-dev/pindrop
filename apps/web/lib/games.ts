@@ -1,4 +1,5 @@
 import { createRng, shuffle, type Difficulty } from '@pinpoint/game';
+import type { BotLevel } from './bot';
 import type { CountryIndexItem } from './countries';
 import { inScope } from './scopes';
 
@@ -12,6 +13,10 @@ export interface GameSettings {
   /** seconds per question, 0 = no timer */
   timer: number;
   seed: string;
+  /** play alone or against a bot */
+  opponent: 'solo' | BotLevel;
+  /** Pin Drop only: show country borders on the map */
+  borders: boolean;
 }
 
 export interface GameDef {
@@ -43,8 +48,8 @@ export const GAMES: Record<GameId, GameDef> = {
     title: 'Pin Drop',
     levels: {
       tourist: 'Flag and name, map zoomed to the continent',
-      navigator: 'Flag and name, whole world, no borders',
-      cartographer: 'Name only, whole world, no borders',
+      navigator: 'Flag and name, whole world',
+      cartographer: 'Name only, whole world',
     },
     lengths: [5, 10, 20],
     defaultLength: 5,
@@ -91,7 +96,8 @@ export function choicesFor(answer: CountryIndexItem, countries: CountryIndexItem
 }
 
 /* ---------- best scores, kept on this device ---------- */
-const bestKey = (game: GameId, s: GameSettings) => `pinpoint-best:${game}:${s.difficulty}:${s.scope}:${s.length}`;
+const bestKey = (game: GameId, s: GameSettings) =>
+  `pinpoint-best:${game}:${s.difficulty}:${s.scope}:${s.length}${game === 'pin-drop' ? `:${s.borders ? 'borders' : 'borderless'}` : ''}`;
 
 export function readBest(game: GameId, s: GameSettings): number | null {
   try {

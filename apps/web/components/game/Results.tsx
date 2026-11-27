@@ -2,13 +2,15 @@
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import type { CountryIndexItem } from '@/lib/countries';
-import type { GameDef } from '@/lib/games';
+import { BOTS, type BotLevel } from '@/lib/bot';
+import type { GameDef, GameSettings } from '@/lib/games';
 import { Confetti, type RoundResult } from './shared';
 
 export function Results({
-  game, results, byCode, newBest, best, onAgain, onSettings,
+  game, settings, results, byCode, newBest, best, onAgain, onSettings,
 }: {
   game: GameDef;
+  settings: GameSettings;
   results: RoundResult[];
   byCode: Map<string, CountryIndexItem>;
   newBest: boolean;
@@ -25,6 +27,10 @@ export function Results({
     bestStreak = Math.max(bestStreak, run);
   }
   const isPin = game.id === 'pin-drop';
+  const vsBot = settings.opponent !== 'solo';
+  const botName = vsBot ? BOTS[settings.opponent as BotLevel].name : '';
+  const botScore = results.reduce((s, r) => s + (r.bot?.points ?? 0), 0);
+  const verdict = !vsBot ? null : score > botScore ? 'You win!' : score < botScore ? `${botName} wins` : "It's a draw";
   const max = isPin ? results.length * 5000 : null;
 
   const stats = [
@@ -37,9 +43,17 @@ export function Results({
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
       <div className="clay relative p-6 sm:p-8" data-elev="3" style={{ borderRadius: 'var(--radius-xl)' }}>
-        <Confetti fire={newBest ? 1 : 0} />
+        <Confetti fire={newBest || (vsBot && score > botScore) ? 1 : 0} />
         <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--accent)]">{game.title}</p>
-        <h1 className="mt-1 text-4xl font-black tracking-tight">{newBest ? 'New best!' : right === results.length && results.length ? 'Perfect run!' : 'Round complete'}</h1>
+        <h1 className="mt-1 text-4xl font-black tracking-tight">{verdict ?? (newBest ? 'New best!' : right === results.length && results.length ? 'Perfect run!' : 'Round complete')}</h1>
+        {vsBot && (
+          <p className="mt-2 text-lg font-black tabular-nums">
+            <span style={{ color: 'var(--accent)' }}>You {score.toLocaleString('en')}</span>
+            <span className="mx-2 text-[var(--ink-3)]">vs</span>
+            <span style={{ color: 'var(--c3)' }}>🤖 {botName} {botScore.toLocaleString('en')}</span>
+            {newBest && <span className="ml-3 rounded-full px-2.5 py-1 text-xs" style={{ background: 'color-mix(in oklab, var(--warn) 22%, transparent)' }}>New best!</span>}
+          </p>
+        )}
         {!newBest && best != null && <p className="mt-1 text-sm font-bold text-[var(--ink-3)]">Your best here is {best.toLocaleString('en')}.</p>}
 
         <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -61,6 +75,7 @@ export function Results({
                 <span className="min-w-0 flex-1 truncate">{c?.name ?? r.code}</span>
                 {r.km != null && r.km > 0 && <span className="text-xs text-[var(--ink-3)]">{Math.round(r.km).toLocaleString('en')} km</span>}
                 <span className="tabular-nums">{r.points.toLocaleString('en')}</span>
+                {r.bot && <span className="tabular-nums text-xs" style={{ color: 'var(--c3)' }} title={`${botName}`}>🤖{r.bot.points.toLocaleString('en')}</span>}
                 <span aria-label={r.correct ? 'correct' : 'wrong'} style={{ color: r.correct ? 'var(--c4)' : 'var(--bad)' }}>
                   {r.correct ? '✓' : '✗'}
                 </span>

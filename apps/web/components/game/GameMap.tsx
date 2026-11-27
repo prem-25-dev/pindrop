@@ -17,6 +17,9 @@ export interface Reveal {
   tapped?: string | null;
   /** the player's pin, lon/lat (Pin Drop) */
   pin?: [number, number] | null;
+  /** the bot's pin and wrong tap, when playing vs a bot */
+  botPin?: [number, number] | null;
+  botTapped?: string | null;
 }
 
 interface Props {
@@ -28,14 +31,21 @@ interface Props {
   pin?: [number, number] | null;
   reveal?: Reveal | null;
   disabled?: boolean;
+  botName?: string;
   onTapCountry?: (code: string, lonlat: [number, number]) => void;
   onTapPoint?: (lonlat: [number, number]) => void;
 }
 
 /** a map pin with its tip at (0,0), constant size on screen */
-function PinMark({ x, y, color }: { x: number; y: number; color: string }) {
+function PinMark({ x, y, color, label }: { x: number; y: number; color: string; label?: string }) {
   return (
     <g style={{ transform: `translate(${x}px, ${y}px) scale(calc(0.9 / var(--k, 1)))` } as CSSProperties} pointerEvents="none">
+      {label && (
+        <g transform="translate(12 -30)">
+          <rect x="0" y="-9" width={label.length * 6.4 + 14} height="18" rx="9" fill={color} />
+          <text x="7" y="4" fontSize="11" fontWeight="800" fill="#fff">{label}</text>
+        </g>
+      )}
       <ellipse cx="0" cy="0" rx="5" ry="2" fill="#000" opacity=".25" />
       <path d="M0 0C-5-7-9-11-9-16.5a9 9 0 1 1 18 0C9-11 5-7 0 0Z" fill={color} stroke="#fff" strokeWidth="1.6" />
       <circle cx="0" cy="-16.5" r="3.4" fill="#fff" />
@@ -81,7 +91,7 @@ const Countries = memo(function Countries({ world, borders, active }: { world: W
   );
 });
 
-export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world, borders, active, pin, reveal, disabled, onTapCountry, onTapPoint }, ref) {
+export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world, borders, active, pin, reveal, disabled, botName, onTapCountry, onTapPoint }, ref) {
   const { w, h } = world;
   const z = useZoomStage(w, h, { maxK: 30 });
   const shapeBy = new Map(world.shapes.map((s) => [s.code, s]));
@@ -122,6 +132,10 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
   const tapped = reveal?.tapped ? shapeBy.get(reveal.tapped) : null;
   const pinXY = pin ? world.projection(pin) : null;
   const revealPinXY = reveal?.pin ? world.projection(reveal.pin) : null;
+  const botPinXY = reveal?.botPin ? world.projection(reveal.botPin) : null;
+  const botTapped = reveal?.botTapped && reveal.botTapped !== reveal.tapped ? shapeBy.get(reveal.botTapped) : null;
+  // tiny answers (islands, microstates) get a ring so they can be seen at any zoom
+  const tinyTarget = target && Math.max(target.box[1][0] - target.box[0][0], target.box[1][1] - target.box[0][1]) < 6;
 
   return (
     <div
@@ -137,6 +151,7 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
 
             {/* reveal: the right country, the wrong tap, and the line from the pin */}
             {tapped && tapped.code !== reveal?.target && <path d={tapped.d} fill="var(--bad)" opacity=".85" stroke="#fff" strokeWidth={1.2} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+            {botTapped && <path d={botTapped.d} fill="var(--c3)" opacity=".55" stroke="#fff" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
             {target && (
               <path
                 d={target.d}
@@ -163,14 +178,18 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
                 pointerEvents="none"
               />
             )}
-            {revealPinXY && <PinMark x={revealPinXY[0]} y={revealPinXY[1]} color={reveal?.correct ? 'var(--c4)' : 'var(--bad)'} />}
+            {target && tinyTarget && (
+              <circle cx={target.center[0]} cy={target.center[1]} fill="none" stroke="var(--c4)" strokeWidth={3} vectorEffect="non-scaling-stroke" className="animate-pulse" style={{ r: 'calc(16px / var(--k, 1))' } as CSSProperties} pointerEvents="none" />
+            )}
+            {botPinXY && <PinMark x={botPinXY[0]} y={botPinXY[1]} color="var(--c3)" label={botName} />}
+            {revealPinXY && <PinMark x={revealPinXY[0]} y={revealPinXY[1]} color={reveal?.correct ? 'var(--c4)' : 'var(--bad)'} label={botPinXY ? 'You' : undefined} />}
             {!reveal && pinXY && <PinMark x={pinXY[0]} y={pinXY[1]} color="var(--accent)" />}
           </g>
         </svg>
       </div>
 
       {/* zoom */}
-      <div className="absolute bottom-3 right-3 flex flex-col gap-2" onClick={(e) => e.stopPropagation()}>
+      <div className="absolute right-3 top-1/2 flex -translate-y-1/2 flex-col gap-2" onClick={(e) => e.stopPropagation()}>
         {[
           { label: 'Zoom in', icon: '+', f: 1.8 },
           { label: 'Zoom out', icon: '−', f: 1 / 1.8 },

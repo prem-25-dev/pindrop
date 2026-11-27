@@ -1,6 +1,7 @@
 'use client';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
+import type { BotAnswer } from '@/lib/bot';
 import type { CountryIndexItem } from '@/lib/countries';
 
 export interface RoundResult {
@@ -11,6 +12,8 @@ export interface RoundResult {
   answer: string | null;
   km?: number;
   ms: number;
+  /** the bot's answer to the same question, when playing vs a bot */
+  bot?: BotAnswer;
 }
 
 /** per-question countdown; returns time left (ms). Calls onExpire once when it hits zero. */
@@ -93,7 +96,7 @@ export function Flag({ c, className = '' }: { c: CountryIndexItem; className?: s
   );
 }
 
-export function Feedback({ result, country, extra, onNext, nextLabel = 'Next', title, partial }: { result: RoundResult; country: CountryIndexItem; extra?: string; onNext: () => void; nextLabel?: string; title?: string; /** a near miss that still scored well: amber, not red */ partial?: boolean }) {
+export function Feedback({ result, country, extra, onNext, nextLabel = 'Next', title, partial, bot, botName }: { result: RoundResult; country: CountryIndexItem; extra?: string; onNext: () => void; nextLabel?: string; title?: string; /** a near miss that still scored well: amber, not red */ partial?: boolean; bot?: BotAnswer; botName?: string }) {
   const tone = result.correct ? 'var(--c4)' : partial ? 'var(--warn-deep)' : 'var(--bad)';
   const btn = useRef<HTMLButtonElement>(null);
   useEffect(() => {
@@ -120,6 +123,7 @@ export function Feedback({ result, country, extra, onNext, nextLabel = 'Next', t
             {result.correct ? country.name : `It was ${country.name}`}
             {extra ? ` · ${extra}` : ''}
           </p>
+          {bot && botName && <BotLine name={botName} bot={bot} />}
         </div>
       </div>
       <div className="flex items-center gap-3">
@@ -129,5 +133,34 @@ export function Feedback({ result, country, extra, onNext, nextLabel = 'Next', t
         </button>
       </div>
     </motion.div>
+  );
+}
+
+/** live status of the bot during a round: thinking, then locked in (its answer stays hidden until you answer) */
+export function BotChip({ name, ms, done }: { name: string; ms: number; done: boolean }) {
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    setLocked(false);
+    const t = setTimeout(() => setLocked(true), ms);
+    return () => clearTimeout(t);
+  }, [ms]);
+  if (done) return null;
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold" style={{ background: 'color-mix(in oklab, var(--c3) 14%, transparent)', color: 'var(--c3)' }} aria-live="polite">
+      <span className={`h-2 w-2 rounded-full ${locked ? '' : 'animate-pulse'}`} style={{ background: 'var(--c3)' }} />
+      {locked ? `${name} has answered` : `${name} is thinking…`}
+    </span>
+  );
+}
+
+/** one line comparing the bot's answer, shown with the feedback */
+export function BotLine({ name, bot }: { name: string; bot: BotAnswer }) {
+  return (
+    <p className="text-xs font-bold text-[var(--ink-2)]">
+      <span style={{ color: 'var(--c3)' }}>🤖 {name}</span>{' '}
+      {bot.correct ? '✓ got it' : bot.answer ? `✗ said ${bot.answer}` : bot.km != null ? `✗ ${Math.round(bot.km).toLocaleString('en')} km off` : '✗ ran out of time'}
+      {' · '}
+      <span className="tabular-nums">+{bot.points.toLocaleString('en')}</span>
+    </p>
   );
 }
