@@ -1,7 +1,6 @@
-import { ComingSoon } from '@/components/ComingSoon';
+import { redirect } from 'next/navigation';
 
-export const metadata = { title: 'Profile' };
-
+// the passport is the profile
 export default function Page() {
-  return <ComingSoon icon="profile" milestone="Milestone 4" title="Your profile" body="Clay avatars you can dress up, XP and levels, badges, friends and your public page." />;
+  redirect('/passport');
 }
