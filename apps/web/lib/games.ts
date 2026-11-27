@@ -13,8 +13,9 @@ export interface GameSettings {
   /** seconds per question, 0 = no timer */
   timer: number;
   seed: string;
-  /** play alone or against a bot */
-  opponent: 'solo' | BotLevel;
+  /** how many bots join the game (0 = solo) and how good they are */
+  bots: number;
+  botLevel: BotLevel;
   /** Pin Drop only: show country borders on the map */
   borders: boolean;
 }
@@ -123,7 +124,14 @@ export function saveBest(game: GameId, s: GameSettings, score: number): boolean 
 const SETTINGS_KEY = (game: GameId) => `pinpoint-settings:${game}`;
 export function readSettings(game: GameId): Partial<GameSettings> {
   try {
-    return JSON.parse(localStorage.getItem(SETTINGS_KEY(game)) ?? '{}');
+    const raw = JSON.parse(localStorage.getItem(SETTINGS_KEY(game)) ?? '{}');
+    // settings saved before multiple bots: { opponent: 'solo' | level }
+    if (raw.opponent && raw.bots == null) {
+      raw.bots = raw.opponent === 'solo' ? 0 : 1;
+      if (raw.opponent !== 'solo') raw.botLevel = raw.opponent;
+      delete raw.opponent;
+    }
+    return raw;
   } catch {
     return {};
   }

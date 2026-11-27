@@ -6,9 +6,9 @@ import { kmToCountry, type WorldShapes } from './geo';
 export type BotLevel = 'easy' | 'medium' | 'hard';
 
 export const BOTS: Record<BotLevel, { name: string; blurb: string; accuracy: number; seconds: [number, number]; pinKm: number }> = {
-  easy: { name: 'Rookie', blurb: 'Gets about half right, takes its time', accuracy: 0.5, seconds: [3.5, 8], pinKm: 900 },
-  medium: { name: 'Explorer', blurb: 'Right about 3 in 4, steady pace', accuracy: 0.72, seconds: [2.5, 6], pinKm: 350 },
-  hard: { name: 'Atlas', blurb: 'Rarely wrong, very quick', accuracy: 0.9, seconds: [1.5, 4], pinKm: 110 },
+  easy: { name: 'Rookie', blurb: 'About half right, in no hurry', accuracy: 0.5, seconds: [3.5, 8], pinKm: 1100 },
+  medium: { name: 'Explorer', blurb: 'About 3 in 4 right, steady pace', accuracy: 0.72, seconds: [2.5, 6], pinKm: 450 },
+  hard: { name: 'Atlas', blurb: 'Rarely wrong, very quick', accuracy: 0.9, seconds: [1.5, 4], pinKm: 200 },
 };
 
 export interface BotAnswer {
@@ -22,7 +22,39 @@ export interface BotAnswer {
   tapped?: string | null;
 }
 
+/** a bot at the table: its own name, colour and seeded answers; all share one skill level */
+export interface BotPlayer {
+  id: string;
+  name: string;
+  color: string;
+  level: BotLevel;
+}
+
+const CREW = [
+  { id: 'mira', name: 'Mira', color: '#3d7fd1' },
+  { id: 'kofi', name: 'Kofi', color: '#2fa36b' },
+  { id: 'lars', name: 'Lars', color: '#c2629a' },
+];
+
+export const makeBots = (count: number, level: BotLevel): BotPlayer[] => CREW.slice(0, Math.max(0, Math.min(3, count))).map((b) => ({ ...b, level }));
+
+const BANTER = {
+  won: ['too easy 😎', 'got it!', 'easy one', 'yes!!', 'I know my flags'],
+  lost: ['ugh, so close', 'no way', 'I panicked', 'next one is mine', 'never heard of it'],
+  close: ['almost!', 'so close lol', 'that was tight'],
+};
+
+/** an occasional chat line from a bot after a round (seeded, about 1 in 3 rounds) */
+export function botBanter(bot: BotPlayer, seed: string, index: number, outcome: keyof typeof BANTER): string | null {
+  const r = createRng(`banter:${bot.id}:${seed}:${index}`);
+  if (r() > 0.34) return null;
+  const lines = BANTER[outcome];
+  return lines[Math.floor(r() * lines.length)];
+}
+
 interface Ctx {
+  /** which bot is answering (its own seed) */
+  botId?: string;
   level: BotLevel;
   seed: string;
   index: number;
@@ -30,7 +62,7 @@ interface Ctx {
   timer: number; // seconds, 0 = none
 }
 
-const rngFor = (c: Ctx) => createRng(`bot:${c.level}:${c.seed}:${c.index}:${c.country.code}`);
+const rngFor = (c: Ctx) => createRng(`bot:${c.botId ?? ''}:${c.level}:${c.seed}:${c.index}:${c.country.code}`);
 const timeFor = (c: Ctx, r: () => number) => {
   const [a, b] = BOTS[c.level].seconds;
   return (a + (b - a) * r()) * 1000;

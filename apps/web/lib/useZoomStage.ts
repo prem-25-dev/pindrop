@@ -38,6 +38,8 @@ export function useZoomStage(w: number, h: number, opts?: { maxK?: number; onGes
     if (!box || !stage || !svg || !g) return;
     let committed = zoomIdentity;
     const commit = (t: typeof zoomIdentity) => {
+      // a transition can end after the map unmounted (round changed mid-zoom)
+      if (!boxRef.current) return;
       const { s, ox, oy } = fit();
       g.setAttribute('transform', `translate(${(t.x + t.k * ox - ox) / s},${(t.y + t.k * oy - oy) / s}) scale(${t.k})`);
       svg.style.setProperty('--k', String(t.k));
@@ -66,7 +68,7 @@ export function useZoomStage(w: number, h: number, opts?: { maxK?: number; onGes
     window.addEventListener('resize', bounds);
     return () => {
       window.removeEventListener('resize', bounds);
-      select(box).on('.zoom', null);
+      select(box).interrupt().on('.zoom', null);
     };
   }, [fit, maxK]);
 

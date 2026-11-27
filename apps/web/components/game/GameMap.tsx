@@ -17,9 +17,8 @@ export interface Reveal {
   tapped?: string | null;
   /** the player's pin, lon/lat (Pin Drop) */
   pin?: [number, number] | null;
-  /** the bot's pin and wrong tap, when playing vs a bot */
-  botPin?: [number, number] | null;
-  botTapped?: string | null;
+  /** everyone else at the table (bots now, friends with Party Rooms) */
+  others?: { id: string; name: string; color: string; pin?: [number, number] | null; tapped?: string | null }[];
 }
 
 interface Props {
@@ -31,17 +30,16 @@ interface Props {
   pin?: [number, number] | null;
   reveal?: Reveal | null;
   disabled?: boolean;
-  botName?: string;
   onTapCountry?: (code: string, lonlat: [number, number]) => void;
   onTapPoint?: (lonlat: [number, number]) => void;
 }
 
 /** a map pin with its tip at (0,0), constant size on screen */
-function PinMark({ x, y, color, label }: { x: number; y: number; color: string; label?: string }) {
+function PinMark({ x, y, color, label, stack = 0 }: { x: number; y: number; color: string; label?: string; /** staggers labels of pins that land close together */ stack?: number }) {
   return (
     <g style={{ transform: `translate(${x}px, ${y}px) scale(calc(0.9 / var(--k, 1)))` } as CSSProperties} pointerEvents="none">
       {label && (
-        <g transform="translate(12 -30)">
+        <g transform={`translate(12 ${-30 - stack * 20})`}>
           <rect x="0" y="-9" width={label.length * 6.4 + 14} height="18" rx="9" fill={color} />
           <text x="7" y="4" fontSize="11" fontWeight="800" fill="#fff">{label}</text>
         </g>
@@ -91,7 +89,7 @@ const Countries = memo(function Countries({ world, borders, active }: { world: W
   );
 });
 
-export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world, borders, active, pin, reveal, disabled, botName, onTapCountry, onTapPoint }, ref) {
+export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world, borders, active, pin, reveal, disabled, onTapCountry, onTapPoint }, ref) {
   const { w, h } = world;
   const z = useZoomStage(w, h, { maxK: 30 });
   const shapeBy = new Map(world.shapes.map((s) => [s.code, s]));
@@ -132,8 +130,11 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
   const tapped = reveal?.tapped ? shapeBy.get(reveal.tapped) : null;
   const pinXY = pin ? world.projection(pin) : null;
   const revealPinXY = reveal?.pin ? world.projection(reveal.pin) : null;
-  const botPinXY = reveal?.botPin ? world.projection(reveal.botPin) : null;
-  const botTapped = reveal?.botTapped && reveal.botTapped !== reveal.tapped ? shapeBy.get(reveal.botTapped) : null;
+  const others = (reveal?.others ?? []).map((o) => ({
+    ...o,
+    xy: o.pin ? world.projection(o.pin) : null,
+    shape: o.tapped && o.tapped !== reveal?.target && o.tapped !== reveal?.tapped ? shapeBy.get(o.tapped) : undefined,
+  }));
   // tiny answers (islands, microstates) get a ring so they can be seen at any zoom
   const tinyTarget = target && Math.max(target.box[1][0] - target.box[0][0], target.box[1][1] - target.box[0][1]) < 6;
 
@@ -151,7 +152,7 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
 
             {/* reveal: the right country, the wrong tap, and the line from the pin */}
             {tapped && tapped.code !== reveal?.target && <path d={tapped.d} fill="var(--bad)" opacity=".85" stroke="#fff" strokeWidth={1.2} vectorEffect="non-scaling-stroke" pointerEvents="none" />}
-            {botTapped && <path d={botTapped.d} fill="var(--c3)" opacity=".55" stroke="#fff" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" pointerEvents="none" />}
+            {others.map((o) => o.shape && <path key={`t${o.id}`} d={o.shape.d} fill={o.color} opacity=".55" stroke="#fff" strokeWidth={1} strokeDasharray="3 3" vectorEffect="non-scaling-stroke" pointerEvents="none" />)}
             {target && (
               <path
                 d={target.d}
@@ -181,8 +182,8 @@ export const GameMap = forwardRef<GameMapHandle, Props>(function GameMap({ world
             {target && tinyTarget && (
               <circle cx={target.center[0]} cy={target.center[1]} fill="none" stroke="var(--c4)" strokeWidth={3} vectorEffect="non-scaling-stroke" className="animate-pulse" style={{ r: 'calc(16px / var(--k, 1))' } as CSSProperties} pointerEvents="none" />
             )}
-            {botPinXY && <PinMark x={botPinXY[0]} y={botPinXY[1]} color="var(--c3)" label={botName} />}
-            {revealPinXY && <PinMark x={revealPinXY[0]} y={revealPinXY[1]} color={reveal?.correct ? 'var(--c4)' : 'var(--bad)'} label={botPinXY ? 'You' : undefined} />}
+            {others.map((o, i) => o.xy && <PinMark key={`p${o.id}`} x={o.xy[0]} y={o.xy[1]} color={o.color} label={o.name} stack={i + 1} />)}
+            {revealPinXY && <PinMark x={revealPinXY[0]} y={revealPinXY[1]} color={reveal?.correct ? 'var(--c4)' : 'var(--bad)'} label={others.some((o) => o.xy) ? 'You' : undefined} />}
             {!reveal && pinXY && <PinMark x={pinXY[0]} y={pinXY[1]} color="var(--accent)" />}
           </g>
         </svg>

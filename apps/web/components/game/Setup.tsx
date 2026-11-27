@@ -2,7 +2,8 @@
 import { motion } from 'motion/react';
 import { ClayIcon, Segmented, type ClayIconName } from '@pinpoint/ui';
 import type { Difficulty } from '@pinpoint/game';
-import { BOTS } from '@/lib/bot';
+import { BOTS, makeBots, type BotLevel } from '@/lib/bot';
+import { Avatar } from './Avatar';
 import { DIFFICULTIES } from '@/lib/modes';
 import type { GameDef, GameSettings, Length } from '@/lib/games';
 import { SCOPES } from '@/lib/scopes';
@@ -72,22 +73,44 @@ export function Setup({
           </Field>
 
           <div className="grid gap-6 sm:grid-cols-2">
-            <Field label="Opponent">
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Opponent">
-                {(['solo', 'easy', 'medium', 'hard'] as const).map((o) => (
+            <Field label="Bots">
+              <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Number of bots">
+                {[0, 1, 2, 3].map((n) => (
                   <button
-                    key={o}
+                    key={n}
                     role="radio"
-                    aria-checked={settings.opponent === o}
-                    onClick={() => set({ opponent: o })}
-                    className={`clay-focus rounded-full px-3.5 py-1.5 text-sm font-extrabold ${settings.opponent === o ? 'clay-tint tint-c2' : 'clay clay-interactive text-[var(--ink-2)]'}`}
+                    aria-checked={settings.bots === n}
+                    onClick={() => set({ bots: n })}
+                    className={`clay-focus rounded-full px-3.5 py-1.5 text-sm font-extrabold ${settings.bots === n ? 'clay-tint tint-c2' : 'clay clay-interactive text-[var(--ink-2)]'}`}
                     data-elev="1"
                   >
-                    {o === 'solo' ? 'Solo' : `🤖 ${BOTS[o].name}`}
+                    {n === 0 ? 'Solo' : n}
                   </button>
                 ))}
               </div>
-              <p className="text-sm font-semibold text-[var(--ink-2)]">{settings.opponent === 'solo' ? 'Just you and the map' : `Vs bot: ${BOTS[settings.opponent].blurb.toLowerCase()}`}</p>
+              {settings.bots > 0 && (
+                <>
+                  <div className="flex items-center gap-1" aria-hidden>
+                    {makeBots(settings.bots, settings.botLevel).map((b) => (
+                      <span key={b.id} className="flex items-center gap-1 pr-2 text-xs font-black" style={{ color: b.color }}>
+                        <Avatar color={b.color} size={30} />
+                        {b.name}
+                      </span>
+                    ))}
+                  </div>
+                  <Segmented
+                    label="Bot skill"
+                    value={settings.botLevel}
+                    onChange={(v: BotLevel) => set({ botLevel: v })}
+                    options={[
+                      { value: 'easy', label: 'Easy' },
+                      { value: 'medium', label: 'Medium' },
+                      { value: 'hard', label: 'Hard' },
+                    ]}
+                  />
+                </>
+              )}
+              <p className="text-sm font-semibold text-[var(--ink-2)]">{settings.bots === 0 ? 'Just you and the map' : `Bots: ${BOTS[settings.botLevel].blurb.toLowerCase()}`}</p>
             </Field>
             {game.id === 'pin-drop' && (
               <Field label="Map">

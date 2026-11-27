@@ -2,7 +2,9 @@
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import type { CountryIndexItem } from '@/lib/countries';
-import { BOTS, type BotLevel } from '@/lib/bot';
+import { makeBots } from '@/lib/bot';
+import { Avatar } from './Avatar';
+import { YOU } from './GameRoom';
 import type { GameDef, GameSettings } from '@/lib/games';
 import { Confetti, type RoundResult } from './shared';
 
@@ -27,10 +29,16 @@ export function Results({
     bestStreak = Math.max(bestStreak, run);
   }
   const isPin = game.id === 'pin-drop';
-  const vsBot = settings.opponent !== 'solo';
-  const botName = vsBot ? BOTS[settings.opponent as BotLevel].name : '';
-  const botScore = results.reduce((s, r) => s + (r.bot?.points ?? 0), 0);
-  const verdict = !vsBot ? null : score > botScore ? 'You win!' : score < botScore ? `${botName} wins` : "It's a draw";
+  const bots = makeBots(settings.bots, settings.botLevel);
+  const vsBot = bots.length > 0;
+  const standings = [
+    { id: YOU.id, name: YOU.name, color: YOU.color, score },
+    ...bots.map((b, i) => ({ id: b.id, name: b.name, color: b.color, score: results.reduce((s, r) => s + (r.bots?.[i]?.points ?? 0), 0) })),
+  ].sort((a, b) => b.score - a.score || (a.id === YOU.id ? -1 : 1));
+  const top = standings[0];
+  const tied = standings.length > 1 && standings[1].score === top.score;
+  const won = vsBot && top.id === YOU.id && !tied;
+  const verdict = !vsBot ? null : tied ? "It's a tie at the top" : won ? 'You win!' : `${top.name} wins`;
   const max = isPin ? results.length * 5000 : null;
 
   const stats = [
@@ -43,17 +51,30 @@ export function Results({
   return (
     <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="mx-auto max-w-2xl">
       <div className="clay relative p-6 sm:p-8" data-elev="3" style={{ borderRadius: 'var(--radius-xl)' }}>
-        <Confetti fire={newBest || (vsBot && score > botScore) ? 1 : 0} />
+        <Confetti fire={newBest || won ? 1 : 0} />
         <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--accent)]">{game.title}</p>
         <h1 className="mt-1 text-4xl font-black tracking-tight">{verdict ?? (newBest ? 'New best!' : right === results.length && results.length ? 'Perfect run!' : 'Round complete')}</h1>
         {vsBot && (
-          <p className="mt-2 text-lg font-black tabular-nums">
-            <span style={{ color: 'var(--accent)' }}>You {score.toLocaleString('en')}</span>
-            <span className="mx-2 text-[var(--ink-3)]">vs</span>
-            <span style={{ color: 'var(--c3)' }}>🤖 {botName} {botScore.toLocaleString('en')}</span>
-            {newBest && <span className="ml-3 rounded-full px-2.5 py-1 text-xs" style={{ background: 'color-mix(in oklab, var(--warn) 22%, transparent)' }}>New best!</span>}
-          </p>
+          <ol className="mt-5 space-y-2" aria-label="Standings">
+            {standings.map((p, i) => (
+              <motion.li
+                key={p.id}
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.08 * i }}
+                className={`flex items-center gap-3 rounded-2xl px-3 py-2 ${p.id === YOU.id ? 'clay' : ''}`}
+                data-elev={p.id === YOU.id ? '1' : undefined}
+                style={p.id === YOU.id ? undefined : { background: 'color-mix(in oklab, var(--ink) 4%, transparent)' }}
+              >
+                <span className="w-6 text-center text-lg">{['🥇', '🥈', '🥉'][i] ?? <span className="text-sm font-black text-[var(--ink-3)]">{i + 1}</span>}</span>
+                <Avatar color={p.color} size={36} mood={i === 0 ? 'happy' : i === standings.length - 1 ? 'sad' : 'idle'} />
+                <span className="flex-1 font-black">{p.name}</span>
+                <span className="font-black tabular-nums">{p.score.toLocaleString('en')}</span>
+              </motion.li>
+            ))}
+          </ol>
         )}
+        {vsBot && newBest && <p className="mt-3 text-sm font-black" style={{ color: 'var(--warn-deep)' }}>New personal best!</p>}
         {!newBest && best != null && <p className="mt-1 text-sm font-bold text-[var(--ink-3)]">Your best here is {best.toLocaleString('en')}.</p>}
 
         <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -75,7 +96,7 @@ export function Results({
                 <span className="min-w-0 flex-1 truncate">{c?.name ?? r.code}</span>
                 {r.km != null && r.km > 0 && <span className="text-xs text-[var(--ink-3)]">{Math.round(r.km).toLocaleString('en')} km</span>}
                 <span className="tabular-nums">{r.points.toLocaleString('en')}</span>
-                {r.bot && <span className="tabular-nums text-xs" style={{ color: 'var(--c3)' }} title={`${botName}`}>🤖{r.bot.points.toLocaleString('en')}</span>}
+                {r.tries && r.tries > 1 && r.correct && <span className="text-xs text-[var(--ink-3)]">try {r.tries}</span>}
                 <span aria-label={r.correct ? 'correct' : 'wrong'} style={{ color: r.correct ? 'var(--c4)' : 'var(--bad)' }}>
                   {r.correct ? '✓' : '✗'}
                 </span>

@@ -12,23 +12,21 @@ import { WorldBackdrop } from './WorldBackdrop';
 
 const DOCK: DockItem[] = [
   { id: 'home', label: 'Home', href: '/', icon: <ClayIcon name="home" /> },
-  { id: 'explore', label: 'Explore', href: '/explore', icon: <ClayIcon name="explore" /> },
-  { id: 'play', label: 'Games', href: '/play', icon: <ClayIcon name="play" /> },
   { id: 'party', label: 'Party', href: '/party', icon: <ClayIcon name="party" /> },
+  { id: 'explore', label: 'Explore', href: '/explore', icon: <ClayIcon name="explore" /> },
+  // the passport is the player's profile
   { id: 'passport', label: 'Passport', href: '/passport', icon: <ClayIcon name="passport" /> },
   { id: 'leaderboard', label: 'Leaderboard', href: '/leaderboard', icon: <ClayIcon name="trophy" /> },
-  { id: 'me', label: 'Profile', href: '/me', icon: <ClayIcon name="profile" /> },
-  // pinned favourite games
-  { id: 'guess-flag', label: 'Guess the Flag', href: '/play/guess-flag', icon: <ClayIcon name="flag" />, dividerBefore: true },
-  { id: 'pin-drop', label: 'Pin Drop', href: '/play/pin-drop', icon: <ClayIcon name="pin" /> },
+  { id: 'play', label: 'Games', href: '/play', icon: <ClayIcon name="play" /> },
 ];
 
+// phones: five tabs fit comfortably, leaderboard stays reachable from Games and the home grid
 const TABS: DockItem[] = [
   { id: 'home', label: 'Home', href: '/', icon: <ClayIcon name="home" /> },
-  { id: 'explore', label: 'Explore', href: '/explore', icon: <ClayIcon name="explore" /> },
-  { id: 'play', label: 'Games', href: '/play', icon: <ClayIcon name="play" /> },
   { id: 'party', label: 'Party', href: '/party', icon: <ClayIcon name="party" /> },
-  { id: 'me', label: 'Me', href: '/me', icon: <ClayIcon name="profile" /> },
+  { id: 'explore', label: 'Explore', href: '/explore', icon: <ClayIcon name="explore" /> },
+  { id: 'passport', label: 'Passport', href: '/passport', icon: <ClayIcon name="passport" /> },
+  { id: 'play', label: 'Games', href: '/play', icon: <ClayIcon name="play" /> },
 ];
 
 function activeIdFor(path: string) {
