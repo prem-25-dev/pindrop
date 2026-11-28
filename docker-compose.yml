@@ -9,6 +9,14 @@ services:
         # empty: the browser reaches the party server on the same domain under /socket.io
         NEXT_PUBLIC_REALTIME_URL: ${REALTIME_URL:-}
     restart: unless-stopped
+    environment:
+      # signs the login cookie: 32+ random characters (openssl rand -hex 32)
+      AUTH_SECRET: ${AUTH_SECRET:-}
+      # Google sign-in switches on when both are set
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    volumes:
+      - pinpoint-data:/data
     ports:
       - "3000:3000"
 
@@ -22,3 +30,7 @@ services:
       ORIGINS: ${SITE_URL:-http://localhost:3000}
     ports:
       - "4000:4000"
+
+volumes:
+  # accounts and saved progress
+  pinpoint-data:

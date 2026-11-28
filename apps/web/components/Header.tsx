@@ -8,6 +8,9 @@ import { ClayIcon, Segmented } from '@pinpoint/ui';
 import { useSettings } from '@/lib/settings';
 import { openPalette } from './Palette';
 import { CoinChip } from './Coin';
+import { Avatar } from './game/Avatar';
+import { initAccount, useAccount } from '@/lib/account';
+import { useLook } from '@/lib/look';
 import { useWallet } from '@/lib/wallet';
 
 const NAV = [
@@ -46,6 +49,7 @@ export function Header() {
         <div className="flex shrink-0 items-center gap-1 sm:gap-2">
           <CoinChip />
           <SearchButton />
+          <AccountButton />
           <SettingsMenu />
         </div>
       </div>
@@ -190,5 +194,33 @@ function SettingsMenu() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+/** sign in, or your avatar once you are signed in */
+function AccountButton() {
+  const status = useAccount((s) => s.status);
+  const look = useLook();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+    void initAccount();
+  }, []);
+  if (!mounted || status === 'loading') return <span className="h-10 w-10" aria-hidden />;
+  if (status === 'signed-in') {
+    return (
+      <Link href="/account" className="clay-focus grid h-10 w-10 place-items-center rounded-full" aria-label="Your account">
+        <Avatar color={look.color} size={34} mood="happy" hat={look.hat} glasses={look.glasses} />
+      </Link>
+    );
+  }
+  return (
+    <Link href="/login" className="clay clay-interactive clay-focus flex h-10 w-10 items-center justify-center rounded-full text-sm font-black sm:w-auto sm:px-4" data-elev="1" aria-label="Sign in">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden className="sm:hidden">
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4.5 20.5c1.4-3.6 4.2-5.5 7.5-5.5s6.1 1.9 7.5 5.5" />
+      </svg>
+      <span className="hidden sm:inline">Sign in</span>
+    </Link>
   );
 }

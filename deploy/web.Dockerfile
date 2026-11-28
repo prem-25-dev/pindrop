@@ -22,8 +22,10 @@ ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL NEXT_PUBLIC_REALTIME_URL=$NEXT_PU
 RUN npm run data && npm run build -w @pinpoint/web
 
 FROM base AS run
-ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0
-RUN addgroup -S app && adduser -S app -G app
+ENV NODE_ENV=production PORT=3000 HOSTNAME=0.0.0.0 DATA_DIR=/data
+RUN addgroup -S app && adduser -S app -G app && mkdir -p /data && chown app:app /data
+# accounts database and the generated auth secret live here: mount a volume on /data
+VOLUME /data
 COPY --from=build --chown=app:app /app/apps/web/.next/standalone ./
 COPY --from=build --chown=app:app /app/apps/web/.next/static ./apps/web/.next/static
 COPY --from=build --chown=app:app /app/apps/web/public ./apps/web/public

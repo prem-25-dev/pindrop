@@ -29,13 +29,30 @@ Both images run `npm run data` during the build. That generates the flags and th
 
 Route `https://pinpoint.example.com/socket.io` to `realtime:4000` with a path rule in Coolify, and leave `REALTIME_URL` empty. The browser then connects to the same origin.
 
+## Accounts and sign-in
+
+Accounts are stored in a SQLite file in the `web` service's `/data` volume (`pinpoint-data` in the compose file). Back that volume up with Coolify's scheduled backups.
+
+| Variable | What it is |
+|---|---|
+| `AUTH_SECRET` | Signs the login cookie. Set 32+ random characters (`openssl rand -hex 32`). If it is missing, one is created in `/data` on first start. |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Optional. Google sign-in switches on when both are set. |
+
+To set up Google sign-in:
+
+1. **Create the OAuth client:** go to console.cloud.google.com, open APIs & Services, then Credentials. Choose **Create credentials**, then **OAuth client ID**, then **Web application**.
+2. **Add the redirect URI:** `https://pinpoint.example.com/api/auth/google/callback`. For local development, also add `http://localhost:3000/api/auth/google/callback`.
+3. **Copy the credentials:** put the client ID and secret into the two variables above, then restart the `web` service.
+
+Email and password sign-in works without any setup.
+
 ## Good to know
 
 - **Party rooms live in memory.** Restarting or redeploying the realtime service ends the rooms in progress. Players can create a new room straight away. One instance comfortably handles a few hundred rooms.
 - **`NEXT_PUBLIC_*` values are build-time.** After changing `SITE_URL` or `REALTIME_URL`, rebuild the `web` service, not just restart it.
 - **Health checks:** both images declare one. `web` checks `/robots.txt`, `realtime` checks `/health`.
 - **Updating the country data:** run `npm run fetch -w @pinpoint/data` locally (needs network), commit `packages/data/raw`, then redeploy.
-- **Not deployed yet:** accounts (Google sign-in plus Postgres) and Umami analytics. They come in a later step and will add a `postgres` service to the compose file.
+- **Not deployed yet:** Umami analytics. The community features will move accounts to Postgres later; the SQL used now moves over as it is.
 
 ## Running the containers locally
 

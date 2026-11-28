@@ -39,7 +39,7 @@ export function CoinChip() {
 
   return (
     <div className="relative">
-      <Link href="/shop" className="clay-focus flex h-10 items-center gap-1.5 rounded-full px-3 text-sm font-black tabular-nums transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)]" aria-label={`${mounted ? coins : ''} coins. Open the shop`}>
+      <Link href="/shop" className="clay-focus flex h-10 items-center gap-1.5 rounded-full px-2 text-sm font-black sm:px-3 tabular-nums transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)]" aria-label={`${mounted ? coins : ''} coins. Open the shop`}>
         <Coin size={20} />
         {mounted ? coins.toLocaleString('en') : '…'}
       </Link>
