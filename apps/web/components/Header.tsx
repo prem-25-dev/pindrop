@@ -27,12 +27,12 @@ export function Header() {
           <span className="text-lg font-black tracking-tight">Pinpoint</span>
         </Link>
 
-        {/* the main sections, as one clay pill with the current one raised */}
-        <nav aria-label="Main" className="clay hidden items-center gap-0.5 rounded-full p-1 md:flex" data-elev="1">
+        {/* the main sections sit on the bar itself; only the current one is raised */}
+        <nav aria-label="Main" className="hidden items-center gap-1 md:flex">
           {NAV.map((n) => {
             const on = active === n.href;
             return (
-              <Link key={n.href} href={n.href} aria-current={on ? 'page' : undefined} className="clay-focus relative rounded-full px-4 py-1.5 text-sm font-extrabold">
+              <Link key={n.href} href={n.href} aria-current={on ? 'page' : undefined} className="clay-focus relative rounded-full px-4 py-2 text-sm font-extrabold">
                 {on && <motion.span layoutId="nav-on" className="clay absolute inset-0 rounded-full" data-elev="2" transition={{ type: 'spring', stiffness: 420, damping: 32 }} />}
                 <span className={`relative ${on ? 'text-[var(--ink)]' : 'text-[var(--ink-2)] hover:text-[var(--ink)]'}`}>{n.label}</span>
               </Link>
@@ -55,8 +55,7 @@ function SearchButton() {
   return (
     <button
       onClick={openPalette}
-      className="clay clay-interactive clay-focus flex h-10 items-center gap-2 rounded-full pl-3.5 pr-3.5 text-sm font-bold text-[var(--ink-2)] sm:w-40 sm:pr-3"
-      data-elev="1"
+      className="clay-focus flex h-10 items-center gap-2 rounded-full pl-3.5 pr-3.5 text-sm font-bold text-[var(--ink-2)] transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)] hover:text-[var(--ink)] sm:w-40 sm:pr-3"
       aria-label="Search countries and capitals"
     >
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" aria-hidden>

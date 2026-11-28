@@ -2,6 +2,17 @@
 import type { CSSProperties } from 'react';
 
 /**
+ * Flags whose own artwork has a border around an inner panel (inset as % of width / height).
+ * The panel's square corners get rounded to follow the clay corners.
+ */
+const BORDERED: Record<string, { x: number; y: number; color: string }> = {
+  me: { x: 3.75, y: 5, color: '#d3ae3b' },
+  lk: { x: 4.17, y: 5.56, color: '#ffb700' },
+  mv: { x: 18.75, y: 25, color: '#d21034' },
+};
+const codeOf = (src: string) => src.match(/\/([a-z-]+)\.svg/)?.[1] ?? '';
+
+/**
  * A flag pressed out of clay: rounded corners, a soft gloss from the top left,
  * puffy rims and a little slab of thickness underneath. Always 4:3.
  *
@@ -21,7 +32,11 @@ export function ClayFlag({
 }) {
   const d = depth ?? Math.max(2, Math.round((width ?? 200) / 22));
   // equal corners on a 4:3 box: 12% of the width is 16% of the height
-  const radius = width ? Math.round(width * 0.14) : '12% / 16%';
+  const corner = width ? 0.14 : 0.12; // outer corner radius, as a share of the width
+  const radius = width ? Math.round(width * corner) : '12% / 16%';
+  const border = BORDERED[codeOf(src)];
+  // inner corner: what is left of the outer one inside the border, but never too tight
+  const inner = border ? Math.max(corner - border.x / 100, corner * 0.45) : 0;
   return (
     <div
       className={`relative shrink-0 ${className}`}
@@ -35,6 +50,21 @@ export function ClayFlag({
     >
       <div className="absolute inset-0 overflow-hidden" style={{ borderRadius: 'inherit' }}>
         <img src={src} alt={alt} loading={loading} className="block h-full w-full object-cover" draggable={false} />
+        {border && (
+          // a rounded window over the inner panel; its shadow repaints the border colour around it
+          <span
+            aria-hidden
+            className="pointer-events-none absolute"
+            style={{
+              left: `${border.x}%`,
+              right: `${border.x}%`,
+              top: `${border.y}%`,
+              bottom: `${border.y}%`,
+              borderRadius: `${((inner / (1 - (2 * border.x) / 100)) * 100).toFixed(2)}% / ${(((inner * 4) / 3 / (1 - (2 * border.y) / 100)) * 100).toFixed(2)}%`,
+              boxShadow: `0 0 0 999px ${border.color}`,
+            }}
+          />
+        )}
         {/* gloss and shade, then the puffy rim */}
         <span
           aria-hidden
