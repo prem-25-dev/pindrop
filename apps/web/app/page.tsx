@@ -14,7 +14,7 @@ const STATS = [
 
 export default function Home() {
   const byId = Object.fromEntries(MODES.map((m) => [m.id, m]));
-  const games = ['guess-flag', 'pin-drop', 'find-region', 'silhouette', 'border-hop'].map((id) => byId[id]);
+  const games = ['daily', 'guess-flag', 'pin-drop', 'find-region', 'silhouette', 'border-hop'].map((id) => byId[id]);
   const later = MODES.filter((m) => m.milestone === 'v2');
 
   return (

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { ComingSoon } from '@/components/ComingSoon';
 import { BorderHop } from '@/components/game/BorderHop';
+import { DailyMix } from '@/components/game/DailyMix';
 import { GameScreen } from '@/components/game/GameScreen';
 import { isGameId } from '@/lib/games';
 import { MODES } from '@/lib/modes';
@@ -20,5 +21,6 @@ export default async function Page({ params }: { params: Promise<{ mode: string 
   if (!m) notFound();
   if (isGameId(mode)) return <GameScreen gameId={mode} icon={m.icon} />;
   if (mode === 'border-hop') return <BorderHop />;
+  if (mode === 'daily') return <DailyMix />;
   return <ComingSoon icon={m.icon} milestone={m.milestone} title={m.title} body={m.blurb} />;
 }
