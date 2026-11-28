@@ -67,6 +67,7 @@ const isUN195 = (c) => c.unMember || c.cca2 === 'VA' || c.cca2 === 'PS';
 // ---------- shapes: ids -> ISO alpha-2, drop Antarctica ----------
 const byNumeric = new Map(facts.map((c) => [c.ccn3, c]));
 const byCca3 = new Map(facts.map((c) => [c.cca3, c]));
+const byCca2 = (code) => facts.find((c) => c.cca2 === code);
 // English Wikipedia titles where the plain country name lands on another article or a disambiguation page
 const WIKI_TITLE = {
   GE: 'Georgia_(country)', IE: 'Republic_of_Ireland', FM: 'Federated_States_of_Micronesia', PS: 'State_of_Palestine',
@@ -74,18 +75,60 @@ const WIKI_TITLE = {
   MK: 'North_Macedonia', CI: 'Ivory_Coast', MF: 'Collectivity_of_Saint_Martin', SX: 'Sint_Maarten', GM: 'The_Gambia', BS: 'The_Bahamas',
 };
 const wikiUrl = (c) => `https://en.wikipedia.org/wiki/${WIKI_TITLE[c.cca2] ?? encodeURIComponent(c.name.common.replace(/ /g, '_'))}`;
-const NAME_FALLBACK = { Kosovo: 'XK', 'Indian Ocean Ter.': 'AU' };
-const DISPUTED = new Set(['Somaliland', 'N. Cyprus', 'Siachen Glacier']);
+// Natural Earth draws a few disputed or unrecognised areas as their own shapes. Rather than leave
+// them blank, each joins the country most maps show it in (the UN-recognised or controlling one).
+const NAME_FALLBACK = { Kosovo: 'XK', 'Indian Ocean Ter.': 'AU', Somaliland: 'SO', 'N. Cyprus': 'CY', 'Siachen Glacier': 'IN' };
 const shapeCodes = new Set();
 topo.objects.countries.geometries = topo.objects.countries.geometries.filter((g) => {
   const name = g.properties?.name;
   const code = (g.id && byNumeric.get(g.id)?.cca2) || NAME_FALLBACK[name];
   if (code === 'AQ') return false;
   if (code) { g.id = code; g.properties = {}; shapeCodes.add(code); return true; }
-  if (DISPUTED.has(name)) { g.id = null; g.properties = { disputed: name }; return true; }
   problems.push(`shape without match: ${g.id} ${name}`);
   return false;
 });
+
+// France's outline includes its overseas regions. Each becomes its own territory, so French Guiana
+// reads as French Guiana (not "France" in South America) and gets a whole flag of its own.
+{
+  const { feature: toFeature } = await import('topojson-client');
+  const { geoCentroid } = await import('d3-geo');
+  const OVERSEAS = [
+    { code: 'GF', lon: [-55, -51], lat: [1, 6.5] },
+    { code: 'GP', lon: [-62, -60.9], lat: [15.8, 16.6] },
+    { code: 'MQ', lon: [-61.3, -60.7], lat: [14.3, 15] },
+    { code: 'RE', lon: [55, 56], lat: [-21.5, -20.8] },
+    { code: 'YT', lon: [44.9, 45.4], lat: [-13.1, -12.5] },
+  ];
+  const geoms = topo.objects.countries.geometries;
+  const fr = geoms.find((g) => g.id === 'FR');
+  if (fr?.type === 'MultiPolygon') {
+    const polys = toFeature(topo, fr).geometry.coordinates;
+    const keep = [];
+    const split = new Map();
+    polys.forEach((coords, i) => {
+      const [lon, lat] = geoCentroid({ type: 'Polygon', coordinates: coords });
+      const o = OVERSEAS.find((t) => lon >= t.lon[0] && lon <= t.lon[1] && lat >= t.lat[0] && lat <= t.lat[1]);
+      if (o && byCca2(o.code)) split.set(o.code, [...(split.get(o.code) ?? []), fr.arcs[i]]);
+      else keep.push(fr.arcs[i]);
+    });
+    fr.arcs = keep;
+    for (const [code, arcs] of split) {
+      geoms.push({ type: 'MultiPolygon', id: code, arcs, properties: {} });
+      shapeCodes.add(code);
+    }
+    for (const t of OVERSEAS) if (!split.has(t.code)) problems.push(`overseas region not found in France's outline: ${t.code}`);
+  }
+}
+
+// one geometry per code: pieces that share a code (Somalia + Somaliland, ...) are joined, so the
+// shared borders disappear and the flag is fitted to the whole country
+{
+  const { mergeArcs } = await import('topojson-client');
+  const groups = new Map();
+  for (const g of topo.objects.countries.geometries) groups.set(g.id, [...(groups.get(g.id) ?? []), g]);
+  topo.objects.countries.geometries = [...groups].map(([id, gs]) => (gs.length === 1 ? gs[0] : { ...mergeArcs(topo, gs), id, properties: {} }));
+}
 
 // ---------- country index ----------
 const aliasesOf = (c) => {
