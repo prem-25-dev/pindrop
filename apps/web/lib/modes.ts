@@ -28,7 +28,7 @@ export const MODES: Mode[] = [
   { id: 'rarity', title: 'Rarity', blurb: 'Name countries that fit a theme. The rarer the pick, the bigger the score.', icon: 'rarity', href: '/play/rarity', status: 'soon', kind: 'game', milestone: 'v2', tone: ['#8E9BFF', '#4F5BEA', '#323BB8'], ink: 'light' },
   { id: 'passport', title: 'Passport', blurb: 'Your profile as a passport. Pass a country exam to earn its stamp.', icon: 'passport', href: '/passport', status: 'ready', kind: 'game', milestone: 'Milestone 4', tone: ['#7DE4F2', '#16A9C6', '#0B7390'], ink: 'light' },
   { id: 'silhouette', title: 'Silhouette', blurb: 'Just the shape. Which country is it?', icon: 'silhouette', href: '/play/silhouette', status: 'ready', kind: 'game', milestone: 'Milestone 3', tone: ['#FFB6D0', '#F2588F', '#C42F66'], ink: 'light' },
-  { id: 'border-hop', title: 'Border Hop', blurb: 'From France to China by land, in as few hops as you can.', icon: 'hop', href: '/play/border-hop', status: 'soon', kind: 'game', milestone: 'v2', tone: ['#D2F48A', '#8BD13A', '#5A9A1C'], ink: 'dark' },
+  { id: 'border-hop', title: 'Border Hop', blurb: 'From France to China by land, in as few hops as you can.', icon: 'hop', href: '/play/border-hop', status: 'ready', kind: 'game', milestone: 'Milestone 3', tone: ['#D2F48A', '#8BD13A', '#5A9A1C'], ink: 'dark' },
 ];
 
 export const DIFFICULTIES = [
