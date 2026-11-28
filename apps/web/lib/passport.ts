@@ -1,6 +1,7 @@
 'use client';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { STAMP_COINS, useWallet } from './wallet';
 
 /**
  * The passport is the player's profile: a data page (name, home country, avatar) and stamp pages.
@@ -73,6 +74,8 @@ export const usePassport = create<PassportState>()(
           tries: { ...s.tries, [code]: today() },
           stamps: improved && tier ? { ...s.stamps, [code]: { code, tier, score, date: today() } } : s.stamps,
         }));
+        // a new or better stamp pays out (once per country and tier)
+        if (improved && tier) useWallet.getState().earn(`stamp:${code}:${tier}`, STAMP_COINS[tier], `${TIERS[tier].label}`);
         return { tier, improved };
       },
     }),

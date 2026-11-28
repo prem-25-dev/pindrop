@@ -56,6 +56,10 @@ export interface PartyPlayer {
   correct: boolean;
   /** points gained in the last revealed round */
   gained: number;
+  /** cosmetics from the shop */
+  hat?: string | null;
+  glasses?: string | null;
+  title?: string | null;
 }
 
 export interface PartyQuestion {
@@ -138,6 +142,9 @@ export interface PartyJoin {
   color: string;
   /** reconnect token from an earlier join, to take your seat back */
   token?: string;
+  hat?: string | null;
+  glasses?: string | null;
+  title?: string | null;
 }
 
 export type PartyAck<T = object> = ({ ok: true } & T) | { ok: false; error: string };

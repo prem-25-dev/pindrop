@@ -81,10 +81,13 @@ export class Room {
 
   /* ---------------- people ---------------- */
 
-  join(name: string, color: string, token?: string): { ok: true; player: Player } | { ok: false; error: string } {
+  join(name: string, color: string, token?: string, look: { hat?: unknown; glasses?: unknown; title?: unknown } = {}): { ok: true; player: Player } | { ok: false; error: string } {
+    const cosmetic = (v: unknown, max = 24) => (typeof v === 'string' && /^[\w ' -]{1,40}$/.test(v) ? v.slice(0, max) : null);
+    const wear = { hat: cosmetic(look.hat), glasses: cosmetic(look.glasses), title: cosmetic(look.title) };
     this.lastActive = Date.now();
     const back = token ? [...this.players.values()].find((p) => p.token === token) : undefined;
     if (back) {
+      Object.assign(back, wear);
       back.connected = true;
       if (back.dropTimer) clearTimeout(back.dropTimer);
       back.dropTimer = null;
@@ -113,6 +116,7 @@ export class Room {
       tries: 0,
       correct: false,
       gained: 0,
+      ...wear,
       joinedAt: Date.now(),
       streak: 0,
       lastChat: 0,

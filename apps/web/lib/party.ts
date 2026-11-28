@@ -2,6 +2,13 @@
 import { io, type Socket } from 'socket.io-client';
 import { create } from 'zustand';
 import type { PartyAck, PartyAnswer, PartySettings, PartyState, PartyVote } from '@pinpoint/game';
+import { currentLook } from './look';
+
+/** what you wear, sent along when you join */
+const wearing = () => {
+  const l = currentLook();
+  return { hat: l.hat, glasses: l.glasses, title: l.title };
+};
 
 /*
  * The browser side of Party Rooms: one socket, and the latest room state the server sent.
@@ -75,7 +82,7 @@ function send<T>(event: string, data: unknown): Promise<T> {
 }
 
 export async function createRoom(name: string, color: string) {
-  const r = await send<JoinAck>('room:create', { name, color });
+  const r = await send<JoinAck>('room:create', { name, color, ...wearing() });
   if (r.ok) {
     writeSeat(r.code, r.token);
     useParty.setState({ seat: { code: r.code, name, color } });
@@ -88,7 +95,7 @@ const joining = new Map<string, Promise<JoinAck>>();
 export function join(code: string, name: string, color: string): Promise<JoinAck> {
   const running = joining.get(code);
   if (running) return running;
-  const p = send<JoinAck>('room:join', { code, name, color, token: readSeat(code) }).then((r) => {
+  const p = send<JoinAck>('room:join', { code, name, color, token: readSeat(code), ...wearing() }).then((r) => {
     if (r.ok) {
       writeSeat(r.code, r.token);
       useParty.setState({ seat: { code: r.code, name, color } });

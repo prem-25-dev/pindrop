@@ -120,10 +120,11 @@ export function Lobby({ state }: { state: PartyState }) {
               <AnimatePresence initial={false}>
                 {state.players.map((p) => (
                   <motion.li key={p.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: p.connected ? 1 : 0.5, x: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2.5 rounded-2xl px-2.5 py-1.5" style={{ background: p.id === state.you ? 'color-mix(in oklab, var(--accent) 10%, transparent)' : 'color-mix(in oklab, var(--ink) 4%, transparent)' }}>
-                    <Avatar color={p.color} size={34} mood={p.connected ? 'happy' : 'idle'} />
+                    <Avatar color={p.color} size={34} mood={p.connected ? 'happy' : 'idle'} hat={p.hat} glasses={p.glasses} />
                     <span className="min-w-0 flex-1 truncate font-black">
                       {p.name}
                       {p.id === state.you && <span className="ml-1.5 text-xs text-[var(--ink-3)]">you</span>}
+                      {p.title && <span className="block truncate text-[10px] font-extrabold uppercase tracking-wider text-[var(--ink-3)]">{p.title}</span>}
                     </span>
                     {p.host && <span className="rounded-full px-2 py-0.5 text-[10px] font-black text-white" style={{ background: '#d9a53a' }}>HOST</span>}
                     {!p.connected && <span className="text-[10px] font-black text-[var(--ink-3)]">away</span>}

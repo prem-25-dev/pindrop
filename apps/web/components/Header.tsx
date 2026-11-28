@@ -7,12 +7,15 @@ import { useEffect, useRef, useState } from 'react';
 import { ClayIcon, Segmented } from '@pinpoint/ui';
 import { useSettings } from '@/lib/settings';
 import { openPalette } from './Palette';
+import { CoinChip } from './Coin';
+import { useWallet } from '@/lib/wallet';
 
 const NAV = [
   { href: '/explore', label: 'Explore' },
   { href: '/play', label: 'Games' },
   { href: '/party', label: 'Party' },
   { href: '/leaderboard', label: 'Leaderboard' },
+  { href: '/shop', label: 'Shop' },
 ];
 
 /** a floating clay bar: logo on the left, the main sections in the middle, search and settings on the right */
@@ -40,7 +43,8 @@ export function Header() {
           })}
         </nav>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1 sm:gap-2">
+          <CoinChip />
           <SearchButton />
           <SettingsMenu />
         </div>
@@ -74,6 +78,7 @@ function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme, palette, setPalette } = useTheme();
+  const owned = useWallet((s) => s.owned);
   const { dockPosition, setDockPosition, setTourDone, sound, setSound } = useSettings();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
@@ -136,7 +141,16 @@ function SettingsMenu() {
             </div>
             <div className="space-y-2">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Palette</p>
-              <Segmented label="Palette" size="sm" value={palette} onChange={setPalette} options={PALETTES.map((p) => ({ value: p.id, label: p.label }))} />
+              <div className="flex flex-wrap gap-1.5" role="radiogroup" aria-label="Palette">
+                {PALETTES.filter((p) => owned.includes(`theme-${p.id}`)).map((p) => (
+                  <button key={p.id} role="radio" aria-checked={palette === p.id} onClick={() => setPalette(p.id)} className={`clay-focus rounded-full px-3 py-1 text-xs font-extrabold ${palette === p.id ? 'clay-tint tint-accent' : 'clay clay-interactive text-[var(--ink-2)]'}`} data-elev="1">
+                    {p.label}
+                  </button>
+                ))}
+                <Link href="/shop?c=theme" onClick={() => setOpen(false)} className="clay-focus rounded-full px-2 py-1 text-xs font-extrabold text-[var(--ink-3)] hover:text-[var(--ink)]">
+                  More in the shop →
+                </Link>
+              </div>
             </div>
             <div className="space-y-2">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Sound</p>

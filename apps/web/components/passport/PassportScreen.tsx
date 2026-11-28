@@ -9,6 +9,9 @@ import { useHistory } from '@/lib/history';
 import { badgesFrom, ratingFrom, standingsFrom } from '@/lib/progress';
 import { BadgesPage, RankPage } from './ProgressPages';
 import { StampQuiz } from './StampQuiz';
+import { ITEM, coverOf, type CoverPalette } from '@/lib/shop';
+import { useWallet } from '@/lib/wallet';
+import { useAvatarColors, useLook } from '@/lib/look';
 import { StampArt } from './Stamps';
 
 const PER_PAGE = 6;
@@ -36,7 +39,8 @@ function useBookSize() {
 
 /* ---------------- pages ---------------- */
 
-function Cover({ name, stamps, byCode, world, pw }: { name: string; stamps: Stamp[]; byCode: Map<string, CountryIndexItem>; world: WorldShapes | null; pw: number }) {
+function Cover({ name, stamps, byCode, world, pw, pal = COVER, title }: { name: string; stamps: Stamp[]; byCode: Map<string, CountryIndexItem>; world: WorldShapes | null; pw: number; pal?: CoverPalette; title?: string | null }) {
+  const COVER = pal;
   const cream = COVER.ink;
   // the two newest keepsakes are slapped on the cover like stickers
   const stickers = stamps.slice(-2).reverse();
@@ -142,7 +146,7 @@ function Cover({ name, stamps, byCode, world, pw }: { name: string; stamps: Stam
             {name || 'Traveller'}
           </p>
           <p className="text-[9px] font-extrabold tracking-[.16em] text-[#8a7350]">
-            {stamps.length} {stamps.length === 1 ? 'STAMP' : 'STAMPS'}
+            {title ? `${title.toUpperCase()} · ` : ''}{stamps.length} {stamps.length === 1 ? 'STAMP' : 'STAMPS'}
           </p>
         </div>
       </div>
@@ -176,6 +180,8 @@ const pad = (s: string, n: number) => (s + '<'.repeat(n)).slice(0, n);
 
 function DataPage({ byCode, list, stampCount, pw }: { byCode: Map<string, CountryIndexItem>; list: CountryIndexItem[]; stampCount: number; pw: number }) {
   const { name, home, color, issued, number, setProfile } = usePassport();
+  const look = useLook();
+  const colors = useAvatarColors();
   const [edit, setEdit] = useState(false);
   const homeC = home ? byCode.get(home) : undefined;
   const nat = homeC?.iso3 ?? 'XXX';
@@ -221,7 +227,7 @@ function DataPage({ byCode, list, stampCount, pw }: { byCode: Map<string, Countr
             <div>
               <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#8a7350]">Photo</span>
               <div className="mt-1 flex flex-wrap gap-2" role="radiogroup" aria-label="Avatar colour">
-                {AVATAR_COLORS.map((col) => (
+                {colors.map((col) => (
                   <button key={col} role="radio" aria-checked={color === col} aria-label={`Colour ${col}`} onClick={() => setProfile({ color: col })} className="clay-focus rounded-full p-0.5" style={{ boxShadow: color === col ? '0 0 0 2px #6a1b29' : undefined }}>
                     <Avatar color={col} size={34} mood={color === col ? 'happy' : 'idle'} />
                   </button>
@@ -238,7 +244,7 @@ function DataPage({ byCode, list, stampCount, pw }: { byCode: Map<string, Countr
                 className="relative flex aspect-[3/4] w-[34%] shrink-0 items-center justify-center overflow-hidden rounded-2xl border-[5px] border-[#fffaf0]"
                 style={{ background: `radial-gradient(circle at 35% 25%, ${COVER.light}, ${COVER.base})`, boxShadow: '0 0 0 1px rgba(160,130,80,.25), 4px 6px 10px -2px rgba(90,65,30,.35), -2px -2px 4px rgba(255,255,255,.7)' }}
               >
-                <Avatar color={color} size={78} label="Passport photo" />
+                <Avatar color={color} size={78} label="Passport photo" hat={look.hat} glasses={look.glasses} />
                 <span className="pointer-events-none absolute inset-0 opacity-40 mix-blend-overlay" style={{ background: 'linear-gradient(115deg, transparent 20%, #8ef 35%, #f9c 50%, #ff9 62%, transparent 75%)' }} aria-hidden />
               </div>
               <div className="grid min-w-0 flex-1 grid-cols-2 gap-x-2 gap-y-2">
@@ -388,6 +394,9 @@ export function PassportScreen() {
   const [world, setWorld] = useState<WorldShapes | null>(null);
   const { pw, ph, spread } = useBookSize();
   const { stamps, name } = usePassport();
+  const equipped = useWallet((s) => s.equipped);
+  const pal = coverOf(equipped.cover);
+  const titleText = ITEM.get(equipped.title ?? '')?.value ?? null;
   const [at, setAt] = useState(0);
   const [exam, setExam] = useState<CountryIndexItem | null>(null);
 
@@ -410,7 +419,7 @@ export function PassportScreen() {
   ordered.forEach((s) => counts[s.tier]++);
 
   const pages = [
-    <Cover key="cover" name={name} stamps={ordered} byCode={byCode} world={world} pw={pw} />,
+    <Cover key="cover" name={name} stamps={ordered} byCode={byCode} world={world} pw={pw} pal={pal} title={titleText} />,
     <DataPage key="data" byCode={byCode} list={list} stampCount={ordered.length} pw={pw} />,
     <BadgesPage key="badges" badges={badges} n={2} pw={pw} />,
     <RankPage key="rank" rating={rating} standings={standings} games={games} n={3} pw={pw} />,
@@ -474,7 +483,7 @@ export function PassportScreen() {
       </div>
 
       <div className="flex justify-center px-6 pb-10 pt-6">
-        <Book pages={pages} insideCover={<InsideCover />} at={at} onTurn={go} pw={pw} ph={ph} spread={spread} />
+        <Book pages={pages} insideCover={<InsideCover />} at={at} onTurn={go} pw={pw} ph={ph} spread={spread} cover={pal} />
       </div>
       <p className="mt-5 text-center text-xs font-bold text-[var(--ink-3)]">Use the arrows or ← → keys to turn pages.</p>
 

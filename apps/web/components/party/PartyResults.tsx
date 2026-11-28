@@ -71,7 +71,7 @@ export function PartyResults({ state }: { state: PartyState }) {
               <span className="grid h-8 w-8 place-items-center rounded-full text-sm font-black" style={{ background: MEDALS[i] ?? 'transparent', color: MEDALS[i] ? '#2a2418' : 'var(--ink-3)', boxShadow: MEDALS[i] ? 'inset 2px 2px 3px rgba(255,255,255,.6), inset -2px -3px 4px rgba(0,0,0,.18)' : undefined }}>
                 {i + 1}
               </span>
-              <Avatar color={p.color} size={36} mood={i === 0 ? 'happy' : 'idle'} />
+              <Avatar color={p.color} size={36} mood={i === 0 ? 'happy' : 'idle'} hat={p.hat} glasses={p.glasses} />
               <span className="min-w-0 flex-1 truncate font-black">
                 {p.name}
                 {p.id === state.you && <span className="ml-1.5 text-xs text-[var(--ink-3)]">you</span>}

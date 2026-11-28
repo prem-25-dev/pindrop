@@ -60,7 +60,7 @@ function enter(socket: Socket, room: Room, join: PartyJoin, ack: (a: PartyAck<{ 
     socket.leave(prev.code);
     rooms.get(prev.code)?.drop(prev.playerId);
   }
-  const r = room.join(String(join.name ?? ''), String(join.color ?? ''), typeof join.token === 'string' ? join.token : undefined);
+  const r = room.join(String(join.name ?? ''), String(join.color ?? ''), typeof join.token === 'string' ? join.token : undefined, { hat: join.hat, glasses: join.glasses, title: join.title });
   if (!r.ok) return ack(r);
   socket.join(room.code);
   socket.data = { code: room.code, playerId: r.player.id } satisfies SocketData;

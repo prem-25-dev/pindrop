@@ -7,6 +7,7 @@ import { useFocusMode } from '@/lib/focus';
 import { useSettings } from '@/lib/settings';
 import { Header } from './Header';
 import { Palette } from './Palette';
+import { RewardWatcher } from './RewardWatcher';
 import { Tour } from './Tour';
 import { WorldBackdrop } from './WorldBackdrop';
 
@@ -65,6 +66,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
       {!focus && <TabBar items={TABS} activeId={active === 'guess-flag' || active === 'pin-drop' ? 'play' : active} Link={Link} />}
       <Palette />
       <Tour />
+      <RewardWatcher />
     </>
   );
 }

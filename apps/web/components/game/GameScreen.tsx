@@ -18,6 +18,7 @@ import { tooSmallForShape } from './CountryShape';
 import { Results } from './Results';
 import { Setup } from './Setup';
 import type { RoundResult } from './shared';
+import { useLook } from '@/lib/look';
 
 type Phase = 'setup' | 'play' | 'results';
 type Status = RoomPlayer['status'];
@@ -53,6 +54,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const setFocus = useFocusMode((s) => s.setFocus);
   const addGame = useHistory((s) => s.add);
   const myColor = usePassport((s) => s.color);
+  const look = useLook();
 
   const bots = useMemo(() => makeBots(settings.bots, settings.botLevel), [settings.bots, settings.botLevel]);
 
@@ -204,6 +206,8 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
       ...YOU,
       color: myColor,
       isYou: true,
+      hat: look.hat,
+      glasses: look.glasses,
       score: shown.reduce((s, r) => s + r.points, 0),
       status: status[YOU.id] ?? 'idle',
       gained: pending?.points,

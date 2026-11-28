@@ -10,6 +10,7 @@ import { ClayFlag } from '../ClayFlag';
 import { ClayRelief } from '../passport/Book';
 import { Confetti } from './shared';
 import { play } from '@/lib/sound';
+import { useWallet } from '@/lib/wallet';
 
 type Status = 'play' | 'won' | 'gave-up';
 const COLORS = { from: '#2fa36b', to: '#e2603a', hop: '#4f7fd1', best: '#f2b53c', land: '#e6ddcd' };
@@ -135,6 +136,7 @@ export function BorderHop() {
     if (code === puzzle.to) {
       setStatus('won');
       play('win');
+      useWallet.getState().earn(`hop:${seed}`, 8 * starsFor(next.length - 1, puzzle.best.length - 1, hints), 'Border Hop');
       setFire((f) => f + 1);
       setNote({ text: `You made it in ${next.length - 1} hops`, tone: 'good' });
     } else {

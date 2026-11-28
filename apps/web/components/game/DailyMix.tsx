@@ -10,6 +10,7 @@ import { ClayFlag } from '../ClayFlag';
 import { CountryShape, tooSmallForShape } from './CountryShape';
 import { Confetti } from './shared';
 import { play } from '@/lib/sound';
+import { useWallet } from '@/lib/wallet';
 
 const KIND_LABEL: Record<DailyKind, string> = { flag: 'Flag', shape: 'Shape', capital: 'Capital', bigger: 'People', border: 'Neighbours' };
 
@@ -69,6 +70,7 @@ export function DailyMix() {
       setAt((a) => a + 1);
       if (next.length === 5) {
         saveDaily(day, next);
+        useWallet.getState().earn(`daily:${day}`, 5 + next.filter(Boolean).length * 4, 'Daily Mix');
         setStreak(streakOf(readDaily(), day));
         setPlayed(true);
       }

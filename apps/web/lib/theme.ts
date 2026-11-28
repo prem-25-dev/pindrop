@@ -2,13 +2,19 @@
 import { useCallback, useEffect, useState } from 'react';
 
 export type ThemePref = 'system' | 'light' | 'dark';
-export type PaletteId = 'mono' | 'atlas' | 'terra';
+export type PaletteId = 'mono' | 'atlas' | 'terra' | 'ocean' | 'sakura' | 'forest' | 'candy';
 
 export const PALETTES: { id: PaletteId; label: string; note: string }[] = [
   { id: 'atlas', label: 'Atlas', note: 'Warm paper clay, vermilion and teal' },
   { id: 'mono', label: 'Mono', note: 'Cool grey clay, cobalt accent' },
   { id: 'terra', label: 'Terra', note: 'Sand and terracotta clay, sage and ochre' },
+  // from the shop
+  { id: 'ocean', label: 'Ocean', note: 'Sea-glass clay with a coral accent' },
+  { id: 'sakura', label: 'Sakura', note: 'Blossom pink clay with plum' },
+  { id: 'forest', label: 'Forest', note: 'Moss clay with amber' },
+  { id: 'candy', label: 'Candy', note: 'Lilac clay, bubblegum and mint' },
 ];
+export const PALETTE_IDS = PALETTES.map((p) => p.id);
 
 const THEME_KEY = 'pinpoint-theme';
 const PALETTE_KEY = 'pinpoint-palette';
@@ -47,7 +53,7 @@ export function useTheme() {
   useEffect(() => {
     setState({
       theme: read<ThemePref>(THEME_KEY, ['system', 'light', 'dark'], 'system'),
-      palette: read<PaletteId>(PALETTE_KEY, ['mono', 'atlas', 'terra'], DEFAULT_PALETTE),
+      palette: read<PaletteId>(PALETTE_KEY, PALETTE_IDS, DEFAULT_PALETTE),
     });
     const mq = window.matchMedia('(prefers-color-scheme: dark)');
     const onSystem = () => read(THEME_KEY, ['system', 'light', 'dark'] as const, 'system') === 'system' && applyTheme('system');

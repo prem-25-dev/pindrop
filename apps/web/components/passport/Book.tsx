@@ -1,6 +1,7 @@
 'use client';
 import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { COVERS, type CoverPalette } from '@/lib/shop';
 
 /*
  * A chunky clay booklet. Leaves turn in 3D around the spine, sitting on a thick clay board,
@@ -8,8 +9,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
  * Wide screens show a spread (left page = back of the last turned leaf); phones show one page at a time.
  */
 
-export const COVER = { base: '#4f7fd1', light: '#86b0f0', dark: '#2f5398', ink: '#fbf3df' };
-export const BOARD = { base: '#3d66b3', light: '#5f8ad6', dark: '#244681' };
+/** the default (classic blue) cover; the cover you wear comes in through the `cover` prop */
+export const COVER: CoverPalette = COVERS.classic;
 /** how far the boards reach past the pages */
 export const PAD = 14;
 /** board thickness, for the edge you see while the cover swings */
@@ -19,16 +20,18 @@ const EASE = [0.42, 0, 0.24, 1] as const;
 const COVER_S = 1.1;
 const PAGE_S = 0.9;
 
-const boardFill = `radial-gradient(130% 90% at 25% 10%, ${BOARD.light} 0%, ${BOARD.base} 45%, ${BOARD.dark} 100%)`;
+const boardFillOf = (b: CoverPalette['board']) => `radial-gradient(130% 90% at 25% 10%, ${b.light} 0%, ${b.base} 45%, ${b.dark} 100%)`;
 const boardShade = 'inset 6px 6px 12px rgba(255,255,255,.25), inset -8px -10px 18px rgba(10,25,60,.35)';
 /** the board's thickness: one solid clay slab under it, then a soft shadow */
-const strata = `0 8px 0 ${BOARD.dark}, 0 30px 44px -14px rgba(15,30,65,.6)`;
+const strataOf = (b: CoverPalette['board']) => `0 8px 0 ${b.dark}, 0 30px 44px -14px rgba(15,30,65,.6)`;
 const curlL = 'linear-gradient(90deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
 const curlR = 'linear-gradient(270deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
 
 export function Book({
-  pages, insideCover, at, onTurn, pw, ph, spread,
+  pages, insideCover, at, onTurn, pw, ph, spread, cover = COVER,
 }: {
+  /** the cover's clay colours (board and edge follow it) */
+  cover?: CoverPalette;
   /** pages[0] is the cover */
   pages: ReactNode[];
   /** shown on the back of the cover in spread mode */
@@ -41,6 +44,9 @@ export function Book({
   spread: boolean;
 }) {
   const reduce = useReducedMotion();
+  const BOARD = cover.board;
+  const boardFill = boardFillOf(BOARD);
+  const strata = strataOf(BOARD);
   // spread: leaf 0 = cover / inside cover, then pairs of pages; single: one page per leaf
   const leaves: { front: ReactNode; back: ReactNode | null }[] = [];
   if (spread) {

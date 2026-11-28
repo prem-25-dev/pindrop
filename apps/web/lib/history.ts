@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { BotLevel } from './bot';
 import type { GameId, Length } from './games';
+import { coinsForGame, useWallet } from './wallet';
 
 /**
  * Every finished game, kept on this device. It feeds the local leaderboard
@@ -45,7 +46,15 @@ export const useHistory = create<HistoryState>()(
   persist(
     (set) => ({
       games: [],
-      add: (g) => set((s) => ({ games: [...s.games, { ...g, id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, at: new Date().toISOString() }].slice(-MAX) })),
+      add: (g) => {
+        const rec: GameRecord = { ...g, id: `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`, at: new Date().toISOString() };
+        set((s) => ({ games: [...s.games, rec].slice(-MAX) }));
+        // every finished game pays out coins
+        const others = rec.players.filter((p) => p.id !== 'you');
+        const me = rec.players.find((p) => p.id === 'you');
+        const won = !!me && others.length > 0 && others.every((p) => p.score < me.score);
+        useWallet.getState().earn(`game:${rec.id}`, coinsForGame(rec), won ? 'Won a game' : 'Finished a game');
+      },
     }),
     { name: 'pinpoint-history', version: 1 },
   ),

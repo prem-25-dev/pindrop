@@ -14,6 +14,8 @@ export interface RoomPlayer {
   isYou?: boolean;
   /** points gained in the round that just ended, shown as a pop */
   gained?: number;
+  hat?: string | null;
+  glasses?: string | null;
 }
 
 /** the local player (a real name and avatar arrive with accounts) */
@@ -46,7 +48,7 @@ function Players({ players, compact }: { players: RoomPlayer[]; compact: boolean
             style={p.isYou ? undefined : { background: 'color-mix(in oklab, var(--ink) 4%, transparent)' }}
           >
             <span className="w-4 text-center text-xs font-black tabular-nums text-[var(--ink-3)]">{i + 1}</span>
-            <Avatar color={p.color} size={compact ? 30 : 36} mood={moodOf(p.status)} />
+            <Avatar color={p.color} size={compact ? 30 : 36} mood={moodOf(p.status)} hat={p.hat} glasses={p.glasses} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-black">{p.name}</p>
               <p className="truncate text-[11px] font-bold" style={{ color: p.status === 'correct' ? 'var(--c4)' : p.status === 'wrong' ? 'var(--bad)' : 'var(--ink-3)' }}>
@@ -153,7 +155,7 @@ export function GameRoom({
             <div className="flex gap-2">
               {players.map((p) => (
                 <div key={p.id} className="flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-3" style={{ background: p.isYou ? 'color-mix(in oklab, var(--accent) 12%, transparent)' : 'color-mix(in oklab, var(--ink) 5%, transparent)' }}>
-                  <Avatar color={p.color} size={26} mood={moodOf(p.status)} />
+                  <Avatar color={p.color} size={26} mood={moodOf(p.status)} hat={p.hat} glasses={p.glasses} />
                   <span className="text-xs font-black">{p.isYou ? 'You' : p.name}</span>
                   <span className="text-xs font-black tabular-nums text-[var(--ink-2)]">{p.score.toLocaleString('en')}</span>
                 </div>

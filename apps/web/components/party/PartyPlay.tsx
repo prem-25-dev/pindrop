@@ -36,6 +36,8 @@ function roomPlayers(state: PartyState): RoomPlayer[] {
     id: p.id,
     name: p.name,
     color: p.color,
+    hat: p.hat,
+    glasses: p.glasses,
     score: p.score,
     isYou: p.id === state.you,
     gained: reveal ? p.gained : 0,
