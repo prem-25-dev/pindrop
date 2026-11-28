@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
 import { useCountries, type CountryIndexItem } from '@/lib/countries';
+import { ClayFlag } from './ClayFlag';
 
 // small deterministic RNG so everyone gets the same flag and choices today
 function rng(seed: string) {
@@ -51,25 +52,11 @@ const CONFETTI = ['#FFC93C', '#FF5A5F', '#3CCB7F', '#4AA8FF', '#B07BFF', '#FF8A3
  *  Every flag uses the same 4:3 box (the 4:3 set is redrawn to fit, never squashed or chopped). */
 function FlagObject({ c, className }: { c: CountryIndexItem | null; className: string }) {
   return (
-    <div
-      className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${className} ${c ? '' : 'clay-well'}`}
-      style={{ boxShadow: '0 16px 28px -14px var(--clay-drop), 0 3px 8px var(--clay-drop-2)' }}
-    >
-      {c && (
-        <>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.flag} alt="Mystery flag of the day" className="block h-full w-full" />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[inherit]"
-            style={{
-              background: 'linear-gradient(145deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%, rgba(0,0,0,0) 62%, rgba(0,0,0,.16) 100%)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,.35), inset 0 -2px 6px rgba(0,0,0,.12)',
-            }}
-          />
-        </>
-      )}
-    </div>
+    c ? (
+      <ClayFlag src={c.flag} alt="Mystery flag of the day" depth={8} className={className} />
+    ) : (
+      <div className={`clay-well relative aspect-[4/3] rounded-2xl ${className}`} />
+    )
   );
 }
 

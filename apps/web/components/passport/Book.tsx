@@ -98,7 +98,7 @@ export function Book({
           width: spread ? pw + PAD : pw + PAD * 2,
           height: ph + PAD * 2,
           zIndex: 1,
-          borderRadius: spread ? '8px 28px 28px 8px' : 28,
+          borderRadius: !spread ? 28 : closed ? '8px 28px 28px 8px' : '0 28px 28px 0',
           background: boardFill,
           boxShadow: `${boardShade}, ${strata}`,
         }}
@@ -106,10 +106,10 @@ export function Book({
 
       {/* page edges: paper peeking out on the outer side of each page */}
       {Array.from({ length: leftLayers }, (_, i) => (
-        <PaperEdge key={`l${i}`} x={-(i + 1) * 3.2} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="left" z={21} />
+        <PaperEdge key={`l${i}`} x={-(i + 1) * 3.2} y={0} w={pw} h={ph} i={i} side="left" z={21} />
       ))}
       {Array.from({ length: rightLayers }, (_, i) => (
-        <PaperEdge key={`r${i}`} x={left0 + (i + 1) * 3.2} y={(i + 1) * 2.2} w={pw} h={ph} i={i} side="right" z={5 - i} />
+        <PaperEdge key={`r${i}`} x={left0 + (i + 1) * 3.2} y={0} w={pw} h={ph} i={i} side="right" z={5 - i} />
       ))}
 
       {leaves.map((leaf, k) => {
@@ -140,7 +140,7 @@ export function Book({
               {leaf.back && (
                 <div
                   className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
-                  style={{ transform: `translateZ(${-T / 2}px) rotateY(180deg)`, borderRadius: '28px 8px 8px 28px', background: boardFill, boxShadow: `${boardShade}, ${strata}`, padding: `${PAD}px 0 ${PAD}px ${PAD}px` }}
+                  style={{ transform: `translateZ(${-T / 2}px) rotateY(180deg)`, borderRadius: '28px 0 0 28px', background: boardFill, boxShadow: `${boardShade}, ${strata}`, padding: `${PAD}px 0 ${PAD}px ${PAD}px` }}
                 >
                   <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: '18px 4px 4px 18px' }}>
                     {leaf.back}

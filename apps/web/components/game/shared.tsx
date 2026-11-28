@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import type { BotAnswer } from '@/lib/bot';
 import type { CountryIndexItem } from '@/lib/countries';
+import { ClayFlag } from '../ClayFlag';
 
 export interface RoundResult {
   code: string;
@@ -98,15 +99,7 @@ export function Confetti({ fire }: { fire: number }) {
 /** a frameless flag with a clay sheen; 4:3 so every flag is the same size */
 export function Flag({ c, className = '' }: { c: CountryIndexItem; className?: string }) {
   return (
-    <div className={`relative aspect-[4/3] overflow-hidden rounded-2xl ${className}`} style={{ boxShadow: '0 18px 30px -14px var(--clay-drop), 0 3px 8px var(--clay-drop-2)' }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={c.flag} alt="The flag to identify" className="block h-full w-full" />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-[inherit]"
-        style={{ background: 'linear-gradient(145deg, rgba(255,255,255,.25) 0%, transparent 38%, transparent 62%, rgba(0,0,0,.14) 100%)', boxShadow: 'inset 0 1px 0 rgba(255,255,255,.35)' }}
-      />
-    </div>
+    <ClayFlag src={c.flag} alt="The flag to identify" depth={9} className={className} />
   );
 }
 

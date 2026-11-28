@@ -5,10 +5,15 @@ import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { AVATAR_COLORS, TIERS, triedToday, usePassport, type Stamp, type StampTier } from '@/lib/passport';
 import { Avatar } from '../game/Avatar';
 import { Book, ClayRelief, COVER, PAD, Paper, viewOf } from './Book';
+import { useHistory } from '@/lib/history';
+import { badgesFrom, ratingFrom, standingsFrom } from '@/lib/progress';
+import { BadgesPage, RankPage } from './ProgressPages';
 import { StampQuiz } from './StampQuiz';
 import { StampArt } from './Stamps';
 
 const PER_PAGE = 6;
+/** page index of the first stamp page (cover, data page, badges, rank come first) */
+const FIRST_STAMP = 4;
 
 /** book size from the window: a spread on wide screens, one page on phones */
 function useBookSize() {
@@ -393,6 +398,10 @@ export function PassportScreen() {
   const list = useMemo(() => (all ?? []).filter((c) => c.un195).sort((a, b) => a.name.localeCompare(b.name)), [all]);
   const byCode = useMemo(() => new Map((all ?? []).map((c) => [c.code, c])), [all]);
   const ordered = useMemo(() => Object.values(stamps).sort((a, b) => a.date.localeCompare(b.date) || a.code.localeCompare(b.code)), [stamps]);
+  const games = useHistory((s) => s.games);
+  const badges = useMemo(() => badgesFrom(games, ordered, (code) => byCode.get(code)?.region), [games, ordered, byCode]);
+  const rating = useMemo(() => ratingFrom(games), [games]);
+  const standings = useMemo(() => standingsFrom(games), [games]);
 
   // an odd number of stamp pages keeps the last page on the right of a spread
   let stampPages = Math.max(3, Math.ceil(ordered.length / PER_PAGE));
@@ -403,10 +412,12 @@ export function PassportScreen() {
   const pages = [
     <Cover key="cover" name={name} stamps={ordered} byCode={byCode} world={world} pw={pw} />,
     <DataPage key="data" byCode={byCode} list={list} stampCount={ordered.length} pw={pw} />,
+    <BadgesPage key="badges" badges={badges} n={2} pw={pw} />,
+    <RankPage key="rank" rating={rating} standings={standings} games={games} n={3} pw={pw} />,
     ...Array.from({ length: stampPages }, (_, i) => (
-      <StampPage key={`s${i}`} stamps={ordered.slice(i * PER_PAGE, (i + 1) * PER_PAGE)} n={i + 2} byCode={byCode} world={world} pw={pw} first={i === 0} />
+      <StampPage key={`s${i}`} stamps={ordered.slice(i * PER_PAGE, (i + 1) * PER_PAGE)} n={i + FIRST_STAMP} byCode={byCode} world={world} pw={pw} first={i === 0} />
     )),
-    <EarnPage key="earn" list={list} n={stampPages + 2} onPick={setExam} />,
+    <EarnPage key="earn" list={list} n={stampPages + FIRST_STAMP} onPick={setExam} />,
   ];
   const last = pages.length - 1;
   const go = (p: number) => setAt(viewOf(Math.max(0, Math.min(last, p)), spread));
@@ -448,6 +459,12 @@ export function PassportScreen() {
             Data page
           </button>
           <button onClick={() => go(2)} className="clay clay-interactive clay-focus rounded-full px-4 py-2 text-sm font-extrabold text-[var(--ink-2)]" data-elev="1">
+            Badges
+          </button>
+          <button onClick={() => go(3)} className="clay clay-interactive clay-focus rounded-full px-4 py-2 text-sm font-extrabold text-[var(--ink-2)]" data-elev="1">
+            Rank
+          </button>
+          <button onClick={() => go(FIRST_STAMP)} className="clay clay-interactive clay-focus rounded-full px-4 py-2 text-sm font-extrabold text-[var(--ink-2)]" data-elev="1">
             Stamps
           </button>
           <button onClick={() => go(last)} className="clay-tint tint-accent clay-focus rounded-full px-5 py-2 text-sm font-black">
@@ -473,7 +490,7 @@ export function PassportScreen() {
               .sort((a, b) => a.date.localeCompare(b.date) || a.code.localeCompare(b.code))
               .findIndex((s) => s.code === exam.code);
             setExam(null);
-            go(2 + Math.floor(Math.max(0, idx) / PER_PAGE));
+            go(FIRST_STAMP + Math.floor(Math.max(0, idx) / PER_PAGE));
           }}
         />
       )}

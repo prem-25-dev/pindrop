@@ -10,6 +10,7 @@ import type { RoomPlayer } from './GameRoom';
 import type { Post } from './GameScreen';
 import { GameMap, type GameMapHandle, type Reveal } from './GameMap';
 import { Confetti, Feedback, TimerBar, useCountdown, type RoundResult } from './shared';
+import { ClayFlag } from '../ClayFlag';
 
 const kmLabel = (v: number) => (v === 0 ? 'right on it' : `${Math.round(v).toLocaleString('en')} km away`);
 
@@ -142,8 +143,7 @@ export function MapRound({
           <div className="clay flex flex-wrap items-center justify-between gap-3 px-4 py-2.5" data-elev="3" style={{ borderRadius: 'var(--radius)' }}>
             <div className="flex min-w-0 items-center gap-3.5">
               {showFlag && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={country.flag} alt={`Flag of ${country.name}`} width={56} height={42} className="h-[42px] w-14 shrink-0 rounded-xl" style={{ boxShadow: '0 8px 16px -8px var(--clay-drop)' }} />
+                <ClayFlag src={country.flag} alt={`Flag of ${country.name}`} width={56} depth={3} />
               )}
               <div className="min-w-0">
                 <p className="text-[11px] font-extrabold uppercase tracking-wider text-[var(--ink-3)]">{kind === 'pin' ? 'Drop a pin on' : 'Tap the country'}</p>

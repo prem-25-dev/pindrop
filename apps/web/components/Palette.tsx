@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ClayIcon } from '@pinpoint/ui';
 import { loadCountries, type CountryIndexItem } from '@/lib/countries';
 import { MODES } from '@/lib/modes';
+import { ClayFlag } from './ClayFlag';
 
 const OPEN_EVENT = 'pinpoint:palette';
 
@@ -131,7 +132,7 @@ export function Palette() {
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <span className="flex h-[27px] w-10 shrink-0 items-center justify-center">
-                        <img src={c.flag} alt="" loading="lazy" width={36} height={27} className="h-[27px] w-9 rounded-[5px] shadow-[0_2px_6px_var(--clay-drop-2)]" />
+                        <ClayFlag src={c.flag} width={36} depth={2} loading="lazy" />
                       </span>
                       <span className="font-extrabold">{c.name}</span>
                       {c.capital && <span className="truncate text-sm font-semibold text-[var(--ink-3)]">{c.capital.name}</span>}

@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion } from 'motion/react';
 import { PALETTES, useTheme } from '@/lib/theme';
 import { useEffect, useRef, useState } from 'react';
@@ -7,15 +8,39 @@ import { ClayIcon, Segmented } from '@pinpoint/ui';
 import { useSettings } from '@/lib/settings';
 import { openPalette } from './Palette';
 
+const NAV = [
+  { href: '/explore', label: 'Explore' },
+  { href: '/play', label: 'Games' },
+  { href: '/party', label: 'Party' },
+  { href: '/leaderboard', label: 'Leaderboard' },
+];
+
+/** a floating clay bar: logo on the left, the main sections in the middle, search and settings on the right */
 export function Header() {
+  const path = usePathname();
+  const active = NAV.find((n) => path.startsWith(n.href))?.href;
   return (
-    <header className="fixed inset-x-0 top-0 z-30 bg-[linear-gradient(to_bottom,var(--bg)_55%,transparent)] px-4 pb-5 pt-[max(12px,env(safe-area-inset-top))] sm:px-6">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
-        <Link href="/" className="clay-focus flex items-center gap-2.5 rounded-2xl pr-2" aria-label="Pinpoint home">
-          <ClayIcon name="pin" size={40} />
-          <span className="text-xl font-black tracking-tight">Pinpoint</span>
+    <header className="pointer-events-none fixed inset-x-0 top-0 z-30 px-3 pt-[max(10px,env(safe-area-inset-top))] sm:px-6">
+      <div className="clay pointer-events-auto mx-auto flex h-[60px] max-w-6xl items-center justify-between gap-3 rounded-full pl-2.5 pr-2" data-elev="2">
+        <Link href="/" className="clay-focus flex shrink-0 items-center gap-2.5 rounded-full pr-2" aria-label="Pinpoint home">
+          <ClayIcon name="pin" size={38} />
+          <span className="text-lg font-black tracking-tight">Pinpoint</span>
         </Link>
-        <div className="flex items-center gap-2.5">
+
+        {/* the main sections, as one clay pill with the current one raised */}
+        <nav aria-label="Main" className="clay hidden items-center gap-0.5 rounded-full p-1 md:flex" data-elev="1">
+          {NAV.map((n) => {
+            const on = active === n.href;
+            return (
+              <Link key={n.href} href={n.href} aria-current={on ? 'page' : undefined} className="clay-focus relative rounded-full px-4 py-1.5 text-sm font-extrabold">
+                {on && <motion.span layoutId="nav-on" className="clay absolute inset-0 rounded-full" data-elev="2" transition={{ type: 'spring', stiffness: 420, damping: 32 }} />}
+                <span className={`relative ${on ? 'text-[var(--ink)]' : 'text-[var(--ink-2)] hover:text-[var(--ink)]'}`}>{n.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="flex shrink-0 items-center gap-2">
           <SearchButton />
           <SettingsMenu />
         </div>
@@ -30,7 +55,7 @@ function SearchButton() {
   return (
     <button
       onClick={openPalette}
-      className="clay clay-interactive clay-focus flex h-11 items-center gap-2 rounded-full pl-3.5 pr-3.5 text-sm font-bold text-[var(--ink-2)] sm:pr-4"
+      className="clay clay-interactive clay-focus flex h-10 items-center gap-2 rounded-full pl-3.5 pr-3.5 text-sm font-bold text-[var(--ink-2)] sm:w-40 sm:pr-3"
       data-elev="1"
       aria-label="Search countries and capitals"
     >
@@ -39,7 +64,7 @@ function SearchButton() {
         <path d="m20 20-3.5-3.5" />
       </svg>
       <span className="hidden sm:inline">Search</span>
-      <kbd className="ml-1 hidden font-sans text-[10px] font-bold tracking-wide text-[var(--ink-3)] opacity-60 sm:inline">
+      <kbd className="ml-auto hidden font-sans text-[10px] font-bold tracking-wide text-[var(--ink-3)] opacity-60 sm:inline">
         {isMac ? '⌘K' : 'Ctrl K'}
       </kbd>
     </button>
@@ -75,13 +100,13 @@ function SettingsMenu() {
         aria-expanded={open}
         aria-haspopup="dialog"
         aria-label="Settings"
-        className="clay-focus flex h-11 w-11 items-center justify-center rounded-full"
+        className="clay-focus flex h-10 w-10 items-center justify-center rounded-full"
         animate={{ rotate: open ? 90 : 0 }}
         whileHover={{ rotate: open ? 90 : 35, scale: 1.06 }}
         whileTap={{ scale: 0.88, y: 1 }}
         transition={{ type: 'spring', stiffness: 260, damping: 16 }}
       >
-        <ClayIcon name="settings" variant="bare" size={40} />
+        <ClayIcon name="settings" variant="bare" size={36} />
       </motion.button>
       <AnimatePresence>
         {open && mounted && (
