@@ -265,7 +265,12 @@ function PanelScroll({ c, onClose, children }: { c: CountryIndexItem; onClose: (
             </motion.h2>
             <motion.div className="overflow-hidden" style={{ opacity: subOpacity, height: subHeight }}>
               <p className="mt-0.5 truncate text-xs font-bold text-[var(--ink-3)]">{c.official}</p>
-              <p className="mt-1 text-xs font-extrabold text-[var(--accent)]">{c.subregion || c.region}</p>
+              <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-extrabold">
+                <span className="text-[var(--accent)]">{c.subregion || c.region}</span>
+                <a href={`/country/${c.slug}`} className="text-[var(--ink-3)] underline-offset-2 hover:text-[var(--ink)] hover:underline">
+                  Country page →
+                </a>
+              </p>
             </motion.div>
           </div>
           <button onClick={onClose} aria-label="Close" className="clay clay-interactive clay-focus flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-lg font-black text-[var(--ink-2)]" data-elev="1">
