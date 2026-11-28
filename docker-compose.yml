@@ -1,0 +1,24 @@
+# Pinpoint on Coolify (or any Docker host). See deploy/README.md.
+services:
+  web:
+    build:
+      context: .
+      dockerfile: deploy/web.Dockerfile
+      args:
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-http://localhost:3000}
+        # empty: the browser reaches the party server on the same domain under /socket.io
+        NEXT_PUBLIC_REALTIME_URL: ${REALTIME_URL:-}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+
+  realtime:
+    build:
+      context: .
+      dockerfile: deploy/realtime.Dockerfile
+    restart: unless-stopped
+    environment:
+      # the site's address, so only it may open party connections
+      ORIGINS: ${SITE_URL:-http://localhost:3000}
+    ports:
+      - "4000:4000"

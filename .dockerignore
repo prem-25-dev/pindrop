@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+apps/web/public/data
+apps/web/public/flags
+.git
+.claude
+*.log
+.env
+.env.*
