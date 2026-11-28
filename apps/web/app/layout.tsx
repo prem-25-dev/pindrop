@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Nunito } from 'next/font/google';
+import { ServiceWorker } from '@/components/ServiceWorker';
 import { Shell } from '@/components/Shell';
 import { THEME_INIT_SCRIPT } from '@/lib/theme';
 import './globals.css';
@@ -9,6 +10,9 @@ const nunito = Nunito({ subsets: ['latin'], variable: '--font-nunito', display: 
 export const metadata: Metadata = {
   title: { default: 'Pinpoint — the world map, made playable', template: '%s · Pinpoint' },
   description: 'Explore every country on a map of flags with sourced facts, and play geography games solo or with friends.',
+  applicationName: 'Pinpoint',
+  appleWebApp: { capable: true, title: 'Pinpoint', statusBarStyle: 'default' },
+  icons: { icon: [{ url: '/icons/icon.svg', type: 'image/svg+xml' }, { url: '/icons/icon-192.png', sizes: '192x192' }], apple: '/icons/apple-touch-icon.png' },
 };
 
 export const viewport: Viewport = {
@@ -29,6 +33,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <Shell>{children}</Shell>
+        <ServiceWorker />
       </body>
     </html>
   );
