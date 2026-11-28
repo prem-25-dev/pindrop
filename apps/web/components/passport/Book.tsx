@@ -3,7 +3,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 
 /*
- * A chunky clay booklet. Leaves turn in 3D around a ringed spine, sitting on a thick clay board,
+ * A chunky clay booklet. Leaves turn in 3D around the spine, sitting on a thick clay board,
  * with a visible block of page edges on each side that grows and shrinks as you read.
  * Wide screens show a spread (left page = back of the last turned leaf); phones show one page at a time.
  */
@@ -15,14 +15,14 @@ export const PAD = 14;
 /** board thickness, for the edge you see while the cover swings */
 const T = 9;
 const PAPER_EDGE = ['#f1e6cd', '#ddcdaa', '#ebdfc3', '#d3c19b'];
-const EASE = [0.66, 0, 0.22, 1] as const;
-const COVER_S = 1.25;
+const EASE = [0.42, 0, 0.24, 1] as const;
+const COVER_S = 1.1;
 const PAGE_S = 0.9;
 
 const boardFill = `radial-gradient(130% 90% at 25% 10%, ${BOARD.light} 0%, ${BOARD.base} 45%, ${BOARD.dark} 100%)`;
 const boardShade = 'inset 6px 6px 12px rgba(255,255,255,.25), inset -8px -10px 18px rgba(10,25,60,.35)';
-/** layers of paper and board under the top board: the thickness of the book */
-const strata = `0 3px 0 #f4ead3, 0 5px 0 #ddcca8, 0 7px 0 #efe3c6, 0 9px 0 #d6c39c, 0 13px 0 ${BOARD.dark}, 0 34px 44px -14px rgba(15,30,65,.6)`;
+/** the board's thickness: one solid clay slab under it, then a soft shadow */
+const strata = `0 8px 0 ${BOARD.dark}, 0 30px 44px -14px rgba(15,30,65,.6)`;
 const curlL = 'linear-gradient(90deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
 const curlR = 'linear-gradient(270deg, rgba(90,65,30,.22), rgba(90,65,30,.06) 45%, transparent)';
 
@@ -124,8 +124,8 @@ export function Book({
               className="absolute"
               style={{ left: left0, top: -PAD, width: W, height: H, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: zOf(0), cursor: closed ? 'pointer' : undefined, pointerEvents: !spread && flipped ? 'none' : undefined }}
               initial={false}
-              animate={{ rotateY: flipped ? -180 : peek ? -16 : 0 }}
-              transition={movingLeaf === 0 ? dur(COVER_S) : { type: 'spring', stiffness: 170, damping: 18 }}
+              animate={{ rotateY: flipped ? -180 : peek ? -16 : 0, z: movingLeaf === 0 && !reduce ? [0, 70, 0] : 0 }}
+              transition={movingLeaf === 0 ? { ...dur(COVER_S), z: { duration: COVER_S, ease: 'easeInOut' } } : { type: 'spring', stiffness: 170, damping: 18 }}
               onClick={closed ? () => onTurn(1) : undefined}
             >
               <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ transform: `translateZ(${T / 2}px)`, borderRadius: '8px 28px 28px 8px' }}>
@@ -140,7 +140,7 @@ export function Book({
               {leaf.back && (
                 <div
                   className="absolute inset-0 overflow-hidden [backface-visibility:hidden]"
-                  style={{ transform: `translateZ(${-T / 2}px) rotateY(180deg)`, borderRadius: '28px 8px 8px 28px', background: boardFill, boxShadow: boardShade, padding: `${PAD}px 0 ${PAD}px ${PAD}px` }}
+                  style={{ transform: `translateZ(${-T / 2}px) rotateY(180deg)`, borderRadius: '28px 8px 8px 28px', background: boardFill, boxShadow: `${boardShade}, ${strata}`, padding: `${PAD}px 0 ${PAD}px ${PAD}px` }}
                 >
                   <div className="relative h-full w-full overflow-hidden" style={{ borderRadius: '18px 4px 4px 18px' }}>
                     {leaf.back}
@@ -157,8 +157,8 @@ export function Book({
             className="absolute top-0"
             style={{ left: left0, width: pw, height: ph, transformOrigin: 'left center', transformStyle: 'preserve-3d', zIndex: zOf(k), pointerEvents: !spread && flipped ? 'none' : undefined }}
             initial={false}
-            animate={{ rotateY: flipped ? -180 : 0 }}
-            transition={dur(PAGE_S)}
+            animate={{ rotateY: flipped ? -180 : 0, z: movingLeaf === k && !reduce ? [0, 36, 0] : 0 }}
+            transition={{ ...dur(PAGE_S), z: { duration: PAGE_S, ease: 'easeInOut' } }}
             aria-hidden={!spread ? k !== turned : k !== turned && k !== turned - 1}
           >
             <div className="absolute inset-0 overflow-hidden [backface-visibility:hidden]" style={{ borderRadius: '4px 18px 18px 4px' }}>
@@ -195,9 +195,6 @@ export function Book({
         />
       )}
 
-      {/* the ringed spine, over the pages */}
-      <Rings x={left0} ph={ph} />
-
       <TurnButtons at={at} count={pages.length} spread={spread} onTurn={onTurn} pw={pw} closed={spread && closed} />
     </motion.div>
   );
@@ -219,38 +216,6 @@ function PaperEdge({ x, y, w, h, i, side, z }: { x: number; y: number; w: number
         boxShadow: 'inset 2px 2px 3px rgba(255,255,255,.55), inset -2px -2px 4px rgba(110,80,40,.18), 0 2px 3px rgba(40,30,15,.18)',
       }}
     />
-  );
-}
-
-/** clay binder rings across the spine */
-function Rings({ x, ph }: { x: number; ph: number }) {
-  const count = ph > 520 ? 6 : 5;
-  const gap = ph / (count + 1);
-  return (
-    <div className="pointer-events-none absolute top-0 z-[155]" style={{ left: x, height: ph }} aria-hidden>
-      {Array.from({ length: count }, (_, i) => {
-        const y = gap * (i + 1);
-        return (
-          <div key={i} className="absolute" style={{ top: y - 9, left: -24 }}>
-            {/* punch holes on each side */}
-            <span className="absolute rounded-full" style={{ left: 2, top: 3, width: 11, height: 11, background: 'radial-gradient(circle at 60% 60%, #5d4a2c, #2b2112)', boxShadow: 'inset 1px 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.5)' }} />
-            <span className="absolute rounded-full" style={{ left: 35, top: 3, width: 11, height: 11, background: 'radial-gradient(circle at 40% 60%, #5d4a2c, #2b2112)', boxShadow: 'inset 1px 1px 2px rgba(0,0,0,.6), 0 1px 0 rgba(255,255,255,.5)' }} />
-            {/* the ring itself: a puffy clay loop */}
-            <span
-              className="absolute rounded-full"
-              style={{
-                left: 4,
-                top: 0,
-                width: 40,
-                height: 17,
-                background: 'linear-gradient(180deg, #f3dfbf 0%, #ddbf92 55%, #c29f6d 100%)',
-                boxShadow: 'inset 3px 3px 4px rgba(255,255,255,.7), inset -3px -4px 5px rgba(120,80,30,.4), 0 4px 6px -1px rgba(40,25,5,.45)',
-              }}
-            />
-          </div>
-        );
-      })}
-    </div>
   );
 }
 
