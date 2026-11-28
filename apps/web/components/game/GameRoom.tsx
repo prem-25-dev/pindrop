@@ -70,7 +70,7 @@ function Players({ players, compact }: { players: RoomPlayer[]; compact: boolean
   );
 }
 
-function Chat({ messages, onSend, placeholder, compact }: { messages: ChatMsg[]; onSend: (t: string) => void; placeholder: string; compact: boolean }) {
+export function Chat({ messages, onSend, placeholder, compact }: { messages: ChatMsg[]; onSend: (t: string) => void; placeholder: string; compact: boolean }) {
   const [text, setText] = useState('');
   const [open, setOpen] = useState(!compact);
   const log = useRef<HTMLDivElement>(null);

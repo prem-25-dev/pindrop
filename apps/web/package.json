@@ -20,8 +20,10 @@
     "motion": "14.14.0",
     "next": "16.4.6",
     "polylabel": "2.0.1",
+    "qrcode": "^1.5.4",
     "react": "19.3.1",
     "react-dom": "19.3.1",
+    "socket.io-client": "^4.8.1",
     "topojson-client": "3.1.0",
     "zustand": "5.1.0"
   },
@@ -35,6 +37,7 @@
     "@types/geojson": "7946.0.16",
     "@types/node": "22.20.7",
     "@types/polylabel": "2.0.0",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "19.3.3",
     "@types/react-dom": "19.2.3",
     "@types/topojson-client": "3.1.5",

@@ -20,7 +20,7 @@ export interface Mode {
 
 export const MODES: Mode[] = [
   { id: 'explore', title: 'Explore', blurb: 'Every flag on one map. Tap a country for sourced facts, colour the world by data.', icon: 'explore', href: '/explore', status: 'ready', kind: 'explore', milestone: 'Milestone 2', tone: ['#5FE6C4', '#14B08F', '#0A7663'], ink: 'light' },
-  { id: 'party', title: 'Party Rooms', blurb: 'Every game works with friends too. One room code, up to 50 players, vote the game.', icon: 'party', href: '/party', status: 'soon', kind: 'party', milestone: 'Milestone 5', tone: ['#B79BFF', '#7C4DFF', '#5427D6'], ink: 'light' },
+  { id: 'party', title: 'Party Rooms', blurb: 'Every game works with friends too. One room code, up to 50 players, vote the game.', icon: 'party', href: '/party', status: 'ready', kind: 'party', milestone: 'Milestone 5', tone: ['#B79BFF', '#7C4DFF', '#5427D6'], ink: 'light' },
   { id: 'guess-flag', title: 'Guess the Flag', blurb: 'A flag appears. Name the country before the clock runs out.', icon: 'flag', href: '/play/guess-flag', status: 'ready', kind: 'game', milestone: 'Milestone 3', tone: ['#FFE07A', '#FFB21E', '#E08600'], ink: 'dark' },
   { id: 'pin-drop', title: 'Pin Drop', blurb: 'Flag and name given. Drop your pin on a map with or without borders.', icon: 'pin', href: '/play/pin-drop', status: 'ready', kind: 'game', milestone: 'Milestone 3', tone: ['#86C8FF', '#3A8DF5', '#1E5CC8'], ink: 'light' },
   { id: 'find-region', title: 'Find the Region', blurb: 'Land as close as you can. Inside the border scores the maximum.', icon: 'region', href: '/play/find-region', status: 'ready', kind: 'game', milestone: 'Milestone 3', tone: ['#7FE8A6', '#22B56B', '#137A47'], ink: 'light' },

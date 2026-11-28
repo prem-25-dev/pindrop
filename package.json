@@ -8,7 +8,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @pinpoint/web",
+    "dev": "concurrently -k -n web,party -c magenta,cyan \"npm run dev -w @pinpoint/web\" \"npm run dev -w @pinpoint/realtime\"",
+    "dev:web": "npm run dev -w @pinpoint/web",
+    "dev:party": "npm run dev -w @pinpoint/realtime",
     "build": "npm run build -w @pinpoint/web",
     "data": "npm run build -w @pinpoint/data",
     "typecheck": "npm run typecheck --workspaces --if-present",
@@ -16,5 +18,8 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
   }
 }

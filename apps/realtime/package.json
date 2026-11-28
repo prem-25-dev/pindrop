@@ -1,0 +1,26 @@
+{
+  "name": "@pinpoint/realtime",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Pinpoint Party Rooms: Socket.IO server that runs the rooms and scores every answer",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@pinpoint/game": "*",
+    "d3-geo": "3.1.1",
+    "socket.io": "4.8.1",
+    "topojson-client": "3.1.0",
+    "tsx": "4.19.2"
+  },
+  "devDependencies": {
+    "@types/d3-geo": "3.1.1",
+    "@types/geojson": "7946.0.16",
+    "@types/node": "22.20.7",
+    "@types/topojson-client": "3.1.5",
+    "typescript": "5.9.3"
+  }
+}
