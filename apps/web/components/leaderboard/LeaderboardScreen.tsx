@@ -17,6 +17,7 @@ const BOARDS: { id: Board; label: string }[] = [
   { id: 'guess-flag', label: 'Guess the Flag' },
   { id: 'pin-drop', label: 'Pin Drop' },
   { id: 'find-region', label: 'Find the Region' },
+  { id: 'silhouette', label: 'Silhouette' },
   { id: 'passport', label: 'Passport' },
 ];
 const PERIODS: { id: Period; label: string }[] = [

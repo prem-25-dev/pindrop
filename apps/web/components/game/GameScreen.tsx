@@ -14,6 +14,7 @@ import { GAMES, LIVES, buildQuestions, readBest, readSettings, saveBest, saveSet
 import { FlagRound } from './FlagRound';
 import { GameRoom, YOU, type ChatMsg, type RoomPlayer } from './GameRoom';
 import { MapRound } from './MapRound';
+import { tooSmallForShape } from './CountryShape';
 import { Results } from './Results';
 import { Setup } from './Setup';
 import type { RoundResult } from './shared';
@@ -32,6 +33,9 @@ const kmShort = (km?: number) => (km == null ? 'no pin' : km === 0 ? 'bullseye' 
 export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconName }) {
   const game = GAMES[gameId];
   const isPin = gameId === 'pin-drop';
+  const isShape = gameId === 'silhouette';
+  /** played on the map (pin, region); the others show one big picture */
+  const onMap = gameId === 'pin-drop' || gameId === 'find-region';
   const list = useCountries();
   const [world, setWorld] = useState<WorldShapes | null>(null);
   const [phase, setPhase] = useState<Phase>('setup');
@@ -103,18 +107,18 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
     const crew = makeBots(s.bots, s.botLevel);
     setSettings(s);
     saveSettings(gameId, s);
-    setQuestions(buildQuestions(game, s, list).map((c) => c.code));
+    setQuestions(buildQuestions(game, s, list, isShape && world ? (c) => tooSmallForShape(world, c.code) : undefined).map((c) => c.code));
     setResults([]);
     setPending(null);
     setNewBest(false);
     msgId.current = 0;
     setMessages([
       { id: 'm0', from: 'system', tone: 'info', text: crew.length ? `${crew.map((b) => b.name).join(', ')} joined the room` : 'Solo room. Add bots in the settings for company.' },
-      ...(gameId === 'guess-flag' && s.difficulty !== 'tourist' ? [{ id: 'm00', from: 'system', tone: 'info' as const, text: 'Type your guesses here. 3 tries per flag.' }] : []),
+      ...((gameId === 'guess-flag' || isShape) && s.difficulty !== 'tourist' ? [{ id: 'm00', from: 'system', tone: 'info' as const, text: `Type your guesses here. 3 tries per ${isShape ? 'shape' : 'flag'}.` }] : []),
     ]);
     setPhase('play');
     window.scrollTo({ top: 0 });
-  }, [list, settings, gameId, game]);
+  }, [list, settings, gameId, game, world, isShape]);
 
   const finishGame = useCallback(
     (all: RoundResult[]) => {
@@ -193,7 +197,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
   const streak = streakOf(results);
   const misses = shown.filter((r) => !r.correct).length;
   const endless = settings.length === 'endless';
-  const typing = gameId === 'guess-flag' && settings.difficulty !== 'tourist' && !pending;
+  const typing = (gameId === 'guess-flag' || isShape) && settings.difficulty !== 'tourist' && !pending;
 
   const players: RoomPlayer[] = [
     {
@@ -252,7 +256,7 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
       </header>
 
       <div className="relative z-10 min-h-0 flex-1">
-        <GameRoom players={players} messages={messages} onSend={onSend} placeholder={typing ? 'Type your guess…' : 'Say something…'} compact={!!game.map}>
+        <GameRoom players={players} messages={messages} onSend={onSend} placeholder={typing ? 'Type your guess…' : 'Say something…'} compact={onMap}>
           <AnimatePresence mode="wait">
             {current && (
               <motion.div
@@ -263,8 +267,8 @@ export function GameScreen({ gameId, icon }: { gameId: GameId; icon: ClayIconNam
                 exit={{ opacity: 0, x: -30 }}
                 transition={{ type: 'spring', stiffness: 320, damping: 30 }}
               >
-                {gameId === 'guess-flag' ? (
-                  <FlagRound country={current} all={list} settings={settings} streak={streak} bots={bots} botStreaks={botStreaks} index={index} post={post} setStatus={setStatus} bindGuess={bindGuess} onReveal={onReveal} onNext={onNext} />
+                {!onMap ? (
+                  <FlagRound shape={isShape ? world : null} country={current} all={list} settings={settings} streak={streak} bots={bots} botStreaks={botStreaks} index={index} post={post} setStatus={setStatus} bindGuess={bindGuess} onReveal={onReveal} onNext={onNext} />
                 ) : (
                   <MapRound kind={isPin ? 'pin' : 'find'} country={current} settings={settings} world={world!} byCode={byCode} index={index} bots={bots} post={post} setStatus={setStatus} onReveal={onReveal} onNext={onNext} />
                 )}

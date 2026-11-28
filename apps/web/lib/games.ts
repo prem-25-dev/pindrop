@@ -3,7 +3,7 @@ import type { BotLevel } from './bot';
 import type { CountryIndexItem } from './countries';
 import { inScope } from './scopes';
 
-export type GameId = 'guess-flag' | 'pin-drop' | 'find-region';
+export type GameId = 'guess-flag' | 'pin-drop' | 'find-region' | 'silhouette';
 export type Length = number | 'all' | 'endless';
 
 export interface GameSettings {
@@ -68,14 +68,27 @@ export const GAMES: Record<GameId, GameDef> = {
     defaultLength: 10,
     map: true,
   },
+  silhouette: {
+    id: 'silhouette',
+    title: 'Silhouette',
+    levels: {
+      tourist: 'Pick from four countries',
+      navigator: 'Type the name, small typos are fine',
+      cartographer: 'Type the name, exact spelling',
+    },
+    lengths: [10, 25, 'all', 'endless'],
+    defaultLength: 10,
+    // needs the outline, so only countries with a map shape
+    map: true,
+  },
 };
 
 export const isGameId = (id: string): id is GameId => id in GAMES;
 export const LIVES = 3;
 
 /** the ordered list of countries for a game (seeded, so it can be replayed or shared) */
-export function buildQuestions(game: GameDef, settings: GameSettings, countries: CountryIndexItem[]): CountryIndexItem[] {
-  const pool = countries.filter((c) => c.un195 && inScope(c, settings.scope) && (!game.map || c.hasShape));
+export function buildQuestions(game: GameDef, settings: GameSettings, countries: CountryIndexItem[], skip?: (c: CountryIndexItem) => boolean): CountryIndexItem[] {
+  const pool = countries.filter((c) => c.un195 && inScope(c, settings.scope) && (!game.map || c.hasShape) && !skip?.(c));
   const order = shuffle(pool, createRng(`${game.id}:${settings.seed}`));
   if (settings.length === 'all' || settings.length === 'endless') return order;
   return order.slice(0, settings.length);

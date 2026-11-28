@@ -9,14 +9,18 @@ import { YOU, type RoomPlayer } from './GameRoom';
 import { usePassport } from '@/lib/passport';
 import type { Post } from './GameScreen';
 import { Confetti, Feedback, Flag, TimerBar, useCountdown, type RoundResult } from './shared';
+import type { WorldShapes } from '@/lib/geo';
+import { CountryShape } from './CountryShape';
 
 /** typed answers: three tries per flag, each later try worth less */
 export const TRIES = 3;
 const TRY_SHARE = [1, 0.7, 0.4];
 
 export function FlagRound({
-  country, all, settings, streak, bots, botStreaks, index, post, setStatus, bindGuess, onReveal, onNext,
+  country, all, settings, streak, bots, botStreaks, index, post, setStatus, bindGuess, onReveal, onNext, shape = null,
 }: {
+  /** Silhouette: show the country's outline instead of its flag */
+  shape?: WorldShapes | null;
   country: CountryIndexItem;
   all: CountryIndexItem[];
   settings: GameSettings;
@@ -131,7 +135,16 @@ export function FlagRound({
             // the shake has several keyframes, so it needs a timed animation (springs take only two)
             transition={shake ? { duration: 0.45, ease: 'easeInOut' } : { type: 'spring', stiffness: 260, damping: 18 }}
           >
-            <Flag c={country} className="w-[min(340px,72vw)] lg:w-[min(400px,40vw)]" />
+            {shape ? (
+              // the outline first; once the round is over, its flag
+              result ? (
+                <Flag c={country} className="w-[min(340px,72vw)] lg:w-[min(400px,40vw)]" />
+              ) : (
+                <CountryShape code={country.code} world={shape} className="h-[min(300px,40vh)] w-[min(340px,72vw)] lg:w-[min(400px,40vw)]" />
+              )
+            ) : (
+              <Flag c={country} className="w-[min(340px,72vw)] lg:w-[min(400px,40vw)]" />
+            )}
           </motion.div>
           <Confetti fire={fire} />
         </div>
