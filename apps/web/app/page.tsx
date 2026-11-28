@@ -94,7 +94,7 @@ export default function Home() {
 
       {/* ---------- games ---------- */}
       <section aria-labelledby="games" className="space-y-5">
-        <SectionTitle id="games" title="Games" sub="Every game works solo or with friends, at Tourist, Navigator or Cartographer level." href="/play" />
+        <SectionTitle id="games" title="Games" sub="Play solo, against bots, or live with friends in a Party Room, at Tourist, Navigator or Cartographer level." href="/play" />
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {games.map((m, i) => (
             <ModeCard key={m.id} mode={m} index={i + 2} />

@@ -6,6 +6,9 @@ import { ClayIcon } from '@pinpoint/ui';
 import type { Mode } from '@/lib/modes';
 
 const KIND_LABEL = { explore: 'Explore', game: 'Solo · Party', party: 'Multiplayer' } as const;
+/** games that can also be played live in a Party Room */
+const IN_PARTY = new Set(['guess-flag', 'pin-drop', 'find-region']);
+const kindLabel = (m: { id: string; kind: keyof typeof KIND_LABEL }) => (m.kind === 'game' && !IN_PARTY.has(m.id) ? 'Solo' : KIND_LABEL[m.kind]);
 
 /**
  * A colourful clay game card: tinted clay slab, a big 3D illustration popping out of the
@@ -55,7 +58,7 @@ export function ModeCard({ mode, size = 'md', index = 0 }: { mode: Mode; size?: 
         {/* chips */}
         <div className="absolute left-5 top-5 flex flex-wrap gap-1.5 sm:left-6 sm:top-6">
           <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold uppercase tracking-wider ${dark ? 'bg-black/10' : 'bg-white/20'}`}>
-            {KIND_LABEL[mode.kind]}
+            {kindLabel(mode)}
           </span>
           {mode.status === 'soon' && (
             <span className={`rounded-full px-2.5 py-1 text-[11px] font-extrabold ${dark ? 'bg-black/15' : 'bg-black/20'}`}>{mode.milestone}</span>
