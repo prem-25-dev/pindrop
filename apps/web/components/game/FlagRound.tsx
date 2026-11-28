@@ -11,6 +11,7 @@ import type { Post } from './GameScreen';
 import { Confetti, Feedback, Flag, TimerBar, useCountdown, type RoundResult } from './shared';
 import type { WorldShapes } from '@/lib/geo';
 import { CountryShape } from './CountryShape';
+import { play } from '@/lib/sound';
 
 /** typed answers: three tries per flag, each later try worth less */
 export const TRIES = 3;
@@ -87,6 +88,7 @@ export function FlagRound({
       tries: used || undefined,
     };
     setResult(r);
+    play(correct ? 'right' : 'wrong');
     if (correct) setFire((f) => f + 1);
     // anyone still thinking shows their answer now
     answers.forEach((_, i) => announce(i));
@@ -109,6 +111,7 @@ export function FlagRound({
     post({ from: YOU.id, name: YOU.name, color: usePassport.getState().color, text });
     setTries(used);
     setShake((s) => s + 1);
+    if (used < TRIES) play('pop');
     if (used >= TRIES) finish(false, text, used);
     else if (settings.difficulty === 'navigator' && v.closeness >= 0.5 && !v.matched) post({ from: 'system', tone: 'info', text: `"${text}" is close!` });
     return true;

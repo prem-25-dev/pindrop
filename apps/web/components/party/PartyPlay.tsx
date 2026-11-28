@@ -14,6 +14,7 @@ import { GameMap, type GameMapHandle, type Reveal } from '../game/GameMap';
 import { GameRoom, type RoomPlayer } from '../game/GameRoom';
 import { Confetti, TimerBar } from '../game/shared';
 import { GAME_INFO } from './Lobby';
+import { play } from '@/lib/sound';
 
 /** ms left until a server-clock moment, ticking */
 function useLeft(until: number | null | undefined) {
@@ -173,7 +174,10 @@ function FlagStage({ state }: { state: PartyState }) {
   const reveal = state.phase === 'reveal' ? state.reveal : null;
   const wasCorrect = useRef(false);
   useEffect(() => {
-    if (me?.correct && !wasCorrect.current) setFire((f) => f + 1);
+    if (me?.correct && !wasCorrect.current) {
+      setFire((f) => f + 1);
+      play('right');
+    }
     wasCorrect.current = !!me?.correct;
   }, [me?.correct]);
   // typing goes to the chat box
@@ -280,6 +284,7 @@ function MapStage({ state }: { state: PartyState }) {
     : null;
   useEffect(() => {
     if (!r) return;
+    play(mine?.correct || (mine?.points ?? 0) >= 2500 ? 'right' : 'wrong');
     if (mine?.correct) setFire((f) => f + 1);
     const t = setTimeout(() => mapRef.current?.focusCountry(r.code, mine?.pin ?? undefined), 250);
     return () => clearTimeout(t);

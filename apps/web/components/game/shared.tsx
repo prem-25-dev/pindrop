@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { BotAnswer } from '@/lib/bot';
 import type { CountryIndexItem } from '@/lib/countries';
 import { ClayFlag } from '../ClayFlag';
+import { play } from '@/lib/sound';
 
 export interface RoundResult {
   code: string;
@@ -54,6 +55,12 @@ export function useCountdown(seconds: number, running: boolean, onExpire: () => 
 export function TimerBar({ left, total }: { left: number; total: number }) {
   const f = total ? left / total : 1;
   const secs = Math.ceil(left / 1000);
+  // a soft tick for each of the last three seconds
+  useEffect(() => {
+    if (left > 0 && secs <= 3) play('tick');
+    // once per second, not per frame
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [secs]);
   const low = f <= 0.33;
   return (
     <div className="flex w-full items-center gap-2.5" role="timer" aria-label={`${secs} seconds left`}>

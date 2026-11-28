@@ -9,6 +9,7 @@ import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { ClayFlag } from '../ClayFlag';
 import { CountryShape, tooSmallForShape } from './CountryShape';
 import { Confetti } from './shared';
+import { play } from '@/lib/sound';
 
 const KIND_LABEL: Record<DailyKind, string> = { flag: 'Flag', shape: 'Shape', capital: 'Capital', bigger: 'People', border: 'Neighbours' };
 
@@ -59,6 +60,7 @@ export function DailyMix() {
     if (picked || done) return;
     setPicked(code);
     const right = code === q.answer;
+    play(right ? 'right' : 'wrong');
     if (right) setFire((f) => f + 1);
     const next = [...answers, right];
     setAnswers(next);

@@ -9,6 +9,7 @@ import { Avatar } from '../game/Avatar';
 import { Confetti } from '../game/shared';
 import { Chat } from '../game/GameRoom';
 import { GAME_INFO } from './Lobby';
+import { play } from '@/lib/sound';
 
 const MEDALS = ['#f2c14e', '#b9c3cf', '#d99a6c'];
 
@@ -23,6 +24,12 @@ export function PartyResults({ state }: { state: PartyState }) {
   const top = ranked[0];
   const tie = ranked.length > 1 && ranked[1].score === top?.score;
   const won = place === 1 && !tie && ranked.length > 1;
+
+  useEffect(() => {
+    if (won) play('win');
+    // once, when the results open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // keep this game in your history (feeds the leaderboard page); once per finished game
   useEffect(() => {

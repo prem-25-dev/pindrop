@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import type { CountryIndexItem } from '@/lib/countries';
@@ -8,6 +9,7 @@ import { YOU } from './GameRoom';
 import { usePassport } from '@/lib/passport';
 import type { GameDef, GameSettings } from '@/lib/games';
 import { Confetti, type RoundResult } from './shared';
+import { play } from '@/lib/sound';
 
 export function Results({
   game, settings, results, byCode, newBest, best, onAgain, onSettings,
@@ -40,6 +42,11 @@ export function Results({
   const top = standings[0];
   const tied = standings.length > 1 && standings[1].score === top.score;
   const won = vsBot && top.id === YOU.id && !tied;
+  useEffect(() => {
+    if (won || newBest) play('win');
+    // once, when the results open
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const verdict = !vsBot ? null : tied ? "It's a tie at the top" : won ? 'You win!' : `${top.name} wins`;
   const max = isPin ? results.length * 5000 : null;
 

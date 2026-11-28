@@ -11,6 +11,7 @@ import type { Post } from './GameScreen';
 import { GameMap, type GameMapHandle, type Reveal } from './GameMap';
 import { Confetti, Feedback, TimerBar, useCountdown, type RoundResult } from './shared';
 import { ClayFlag } from '../ClayFlag';
+import { play } from '@/lib/sound';
 
 const kmLabel = (v: number) => (v === 0 ? 'right on it' : `${Math.round(v).toLocaleString('en')} km away`);
 
@@ -81,6 +82,7 @@ export function MapRound({
       ...rv,
       others: bots.map((b, i) => ({ id: b.id, name: b.name, color: b.color, pin: answers[i].pin ?? null, tapped: answers[i].correct ? null : (answers[i].tapped ?? null) })),
     });
+    play(r.correct || r.points >= 2500 ? 'right' : 'wrong');
     if (r.correct) setFire((f) => f + 1);
     setTimeout(() => mapRef.current?.focusCountry(country.code, rv.pin ?? undefined), 250);
     // how everyone did, in the chat

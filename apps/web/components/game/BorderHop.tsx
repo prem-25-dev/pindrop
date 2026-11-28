@@ -9,6 +9,7 @@ import { loadWorldShapes, type WorldShapes } from '@/lib/geo';
 import { ClayFlag } from '../ClayFlag';
 import { ClayRelief } from '../passport/Book';
 import { Confetti } from './shared';
+import { play } from '@/lib/sound';
 
 type Status = 'play' | 'won' | 'gave-up';
 const COLORS = { from: '#2fa36b', to: '#e2603a', hop: '#4f7fd1', best: '#f2b53c', land: '#e6ddcd' };
@@ -124,15 +125,22 @@ export function BorderHop() {
     const c = byCode.get(code);
     if (!c) return;
     if (chain.includes(code)) return setNote({ text: `You have already been to ${c.name}`, tone: 'info' });
-    if (!graph.get(current)?.includes(code)) return setNote({ text: `${c.name} does not border ${byCode.get(current)?.name}`, tone: 'bad' });
+    if (!graph.get(current)?.includes(code)) {
+      play('wrong');
+      return setNote({ text: `${c.name} does not border ${byCode.get(current)?.name}`, tone: 'bad' });
+    }
     const next = [...chain, code];
     setChain(next);
     setShowNeighbours(false);
     if (code === puzzle.to) {
       setStatus('won');
+      play('win');
       setFire((f) => f + 1);
       setNote({ text: `You made it in ${next.length - 1} hops`, tone: 'good' });
-    } else setNote({ text: `Into ${c.name}`, tone: 'good' });
+    } else {
+      play('pop');
+      setNote({ text: `Into ${c.name}`, tone: 'good' });
+    }
   };
 
   const submit = (e: React.FormEvent) => {

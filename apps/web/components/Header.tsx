@@ -74,7 +74,7 @@ function SettingsMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const { theme, setTheme, palette, setPalette } = useTheme();
-  const { dockPosition, setDockPosition, setTourDone } = useSettings();
+  const { dockPosition, setDockPosition, setTourDone, sound, setSound } = useSettings();
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -137,6 +137,19 @@ function SettingsMenu() {
             <div className="space-y-2">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Palette</p>
               <Segmented label="Palette" size="sm" value={palette} onChange={setPalette} options={PALETTES.map((p) => ({ value: p.id, label: p.label }))} />
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Sound</p>
+              <Segmented
+                label="Game sounds"
+                size="sm"
+                value={sound ? 'on' : 'off'}
+                onChange={(v) => setSound(v === 'on')}
+                options={[
+                  { value: 'on', label: 'On' },
+                  { value: 'off', label: 'Off' },
+                ]}
+              />
             </div>
             <div className="hidden space-y-2 md:block">
               <p className="text-xs font-extrabold uppercase tracking-wider text-[var(--ink-3)]">Dock</p>

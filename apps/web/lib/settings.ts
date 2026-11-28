@@ -8,6 +8,9 @@ interface Settings {
   dockPosition: DockPosition;
   tourDone: boolean;
   favorites: string[];
+  /** game sounds on or off */
+  sound: boolean;
+  setSound: (v: boolean) => void;
   setDockPosition: (p: DockPosition) => void;
   setTourDone: (v: boolean) => void;
 }
@@ -31,6 +34,8 @@ export const useSettings = create<Settings>()(
       dockPosition: 'bottom',
       tourDone: false,
       favorites: ['guess-flag', 'pin-drop'],
+      sound: true,
+      setSound: (sound) => set({ sound }),
       setDockPosition: (dockPosition) => set({ dockPosition }),
       setTourDone: (tourDone) => set({ tourDone }),
     }),
